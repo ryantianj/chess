@@ -1,10 +1,13 @@
 import './App.css';
-import Sudoku from "./Sudoku/Sudoku";
+import Chess from "./Chess/Chess";
+import {ChessContextProvider} from "./Chess/ChessContext";
 
 function App() {
   return (
     <div className="App">
-      <Sudoku />
+        <ChessContextProvider>
+            <Chess />
+        </ChessContextProvider>
     </div>
   );
 }

@@ -1,17 +1,23 @@
 import React, {useState} from "react";
-import Board from "./logic/Board"
+import Game from "./logic/Game";
 
 const ChessContext = React.createContext({
-    board: [],
+    game: null,
     highlightCell: [],
     setMoves: () => {},
-    movePiece: () => {}
+    movePiece: () => {},
+    selectedPiece: null,
+    promotion: false,
+    promotionDetails: {}
 });
 export const ChessContextProvider = (props) => {
-    const [board, setBoardValue] = useState(new Board())
+    const [game, setGame] = useState(new Game())
     const [highlightCell, setHighlightCell] = useState([])
     const [selectedPiece, setSelectedPiece] = useState(null)
+    const [promotion, setPromotion] = useState(false)
+    const [promotionDetails, setPromotionDetails] = useState([])
 
+    // display current available moves for a selected piece
     const setMoves = (moves, piece) => {
         setSelectedPiece(piece)
         const newArray = []
@@ -23,6 +29,7 @@ export const ChessContextProvider = (props) => {
         })
     }
 
+    // get move that was selected by user
     const getMove = (row, col) => {
         for (const move of highlightCell) {
             if (move.newCell.row === row && move.newCell.col === col) {
@@ -31,17 +38,29 @@ export const ChessContextProvider = (props) => {
         }
     }
 
+    /**
+     *
+     * @param row new row coordinate
+     * @param col new col coordinate
+     */
     const movePiece = (row, col) => {
-        board.movePiece(row, col, selectedPiece, getMove(row, col))
+        const result = game.movePiece(selectedPiece, getMove(row, col))
+        if (result["promotion"] !== undefined) {
+            setPromotion(true)
+            setPromotionDetails(result)
+        }
         setHighlightCell([])
     }
 
     return (
         <ChessContext.Provider value={{
-            board: board,
+            game: game,
             setMoves: setMoves,
             highlightCell: highlightCell,
-            movePiece: movePiece
+            movePiece: movePiece,
+            selectedPiece: selectedPiece,
+            promotion: promotion,
+            promotionDetails: promotionDetails
         }}>
             {props.children}
         </ChessContext.Provider>

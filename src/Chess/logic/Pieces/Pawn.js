@@ -4,8 +4,6 @@ import imageBlack from "../../images/bp.png"
 import Move from "../Move"
 import Cell from "../Cell";
 class Pawn extends Piece {
-    #pieceMoves = [[1,0],[2,0],[1,1],[1,-1]] // en passant is same as a normal capture
-
     constructor(colour, cell, moves) {
         super(colour, cell, moves)
         if (colour === Piece.WHITE) {
@@ -16,32 +14,86 @@ class Pawn extends Piece {
     }
 
     /**
-     * Returns valid moves of a piece (the coordinates)
-     * @param board chess board, array
+     * Returns valid moves of a piece (move object)
+     * @param board chess board, object
      */
     getMoves = (board) => {
         const moves = []
-        // move one space == nothing on that space
         let newRow = this.cell.row + 1 * this.colour
         let newCol = this.cell.col
-        if (!board.isOutSide(newRow, newCol) && board.isEmpty(newRow, newCol)) {
-            moves.push(new Move(this.cell, new Cell(newRow, newCol)))
+        if (board.canMove(newRow, newCol)) {
+            moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
             newRow = this.cell.row + 2 * this.colour
-            if (!board.isOutSide(newRow, newCol) && board.isEmpty(newRow, newCol) && this.moves.length <= 0) {
-                moves.push(new Move(this.cell, new Cell(newRow, newCol)))
+            if (board.canMove(newRow, newCol) && this.moves.length <= 0) {
+                moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
             }
         }
         newRow = this.cell.row + 1 * this.colour
-        newCol = this.cell.col + 1 * this.colour
-        if (!board.isOutSide(newRow, newCol) && !board.isEmpty(newRow, newCol) && board.getPiece(newRow, newCol).colour !== this.colour) {
-            moves.push(new Move(this.cell, new Cell(newRow, newCol)))
+        newCol = this.cell.col + 1
+        if (board.canEat(newRow, newCol, this.colour)) {
+            moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
+        }
+        // en passant
+        if (board.canMove(newRow, newCol) && board.moves.length > 0) {
+            const prevMove = board.moves.slice(-1)[0]
+            if (prevMove.piece instanceof Pawn && prevMove.newCell.row === this.cell.row && prevMove.newCell.col === this.cell.col + 1
+                && Math.abs(prevMove.newCell.row - prevMove.oldCell.row) === 2) {
+                moves.push(new Move(this.cell, new Cell(newRow, newCol), this, true))
+            }
+
         }
         newRow = this.cell.row + 1 * this.colour
-        newCol = this.cell.col - 1 * this.colour
-        if (!board.isOutSide(newRow, newCol) && !board.isEmpty(newRow, newCol) && board.getPiece(newRow, newCol).colour !== this.colour) {
-            moves.push(new Move(this.cell, new Cell(newRow, newCol)))
+        newCol = this.cell.col - 1
+        if (board.canEat(newRow, newCol, this.colour)) {
+            moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
+        }
+        // en passant
+        if (board.canMove(newRow, newCol) && board.moves.length > 0) {
+            const prevMove = board.moves.slice(-1)[0]
+            if (prevMove.piece instanceof Pawn && prevMove.newCell.row === this.cell.row && prevMove.newCell.col === this.cell.col - 1
+                && Math.abs(prevMove.newCell.row - prevMove.oldCell.row) === 2) {
+                moves.push(new Move(this.cell, new Cell(newRow, newCol), this, true))
+            }
+
         }
         return moves
+    }
+    getAttack = (board) => {
+        const moves = []
+        let newRow = this.cell.row + 1 * this.colour
+        let newCol = this.cell.col + 1
+        if (board.canMove(newRow, newCol) || board.canEatDefend(newRow, newCol)) {
+            moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
+        }
+        newRow = this.cell.row + 1 * this.colour
+        newCol = this.cell.col - 1
+        if (board.canMove(newRow, newCol) || board.canEatDefend(newRow, newCol)) {
+            moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
+        }
+        return moves
+    }
+    /**
+     * Moves the piece
+     */
+    movePiece = (move, boardObject) => {
+        const board = boardObject.getBoard()
+        const newRow = move.newCell.row
+        const newCol = move.newCell.col
+        // const old = board[move.oldCell.row][move.oldCell.col]
+        if (move.isEnPassant) {
+            const prevMove = boardObject.moves.slice(-1)[0]
+            board[prevMove.newCell.row][prevMove.newCell.col] = null
+        }
+
+        board[newRow][newCol] = this
+        board[move.oldCell.row][move.oldCell.col] = null
+        this.cell = new Cell(newRow, newCol)
+        this.moves.push(move)
+        // promotion
+        if (newRow === 0 || newRow === 7) {
+            return {promotion: true, row: newRow, col: newCol}
+        }
+        return {row: newRow, col: newCol}
     }
 }
 

@@ -1,6 +1,6 @@
 {
-  "short_name": "Sudoku Solver",
-  "name": "Sudoku Solver",
+  "short_name": "Chess",
+  "name": "Chess Game",
   "icons": [
     {
       "src": "logo512.png",

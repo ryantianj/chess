@@ -11,7 +11,9 @@ const ChessContext = React.createContext({
     promotion: false,
     promotionDetails: {},
     promote: () => {},
-    gameOver: false
+    gameOver: false,
+    newGame: () => {},
+    undo: () => {}
 });
 export const ChessContextProvider = (props) => {
     const [game, setGame] = useState(new Game())
@@ -40,6 +42,7 @@ export const ChessContextProvider = (props) => {
                 return move
             }
         }
+        return null
     }
 
     /**
@@ -52,6 +55,7 @@ export const ChessContextProvider = (props) => {
         const opponentColour = selectedPiece.colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
         if (game.board.isGameOver(opponentColour)) {
             isGameOver(true)
+            setHighlightCell([])
             return
         }
         if (result["promotion"] !== undefined) {
@@ -67,6 +71,23 @@ export const ChessContextProvider = (props) => {
         setPromotionDetails([])
     }
 
+    const newGame = () => {
+        const result = window.confirm("New Game, are you sure?")
+        if (result) {
+            setGame(new Game())
+            setHighlightCell([])
+            setSelectedPiece(null)
+            isGameOver(false)
+        }
+    }
+
+    const undo = () => {
+        if (!gameOver) {
+            game.undoMove()
+            setHighlightCell([])
+        }
+    }
+
     return (
         <ChessContext.Provider value={{
             game: game,
@@ -77,7 +98,9 @@ export const ChessContextProvider = (props) => {
             promotion: promotion,
             promotionDetails: promotionDetails,
             promote: promote,
-            gameOver: gameOver
+            gameOver: gameOver,
+            newGame: newGame,
+            undo: undo
         }}>
             {props.children}
         </ChessContext.Provider>

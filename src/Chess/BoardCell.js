@@ -68,12 +68,38 @@ const BoardCell = ({row, col, piece}) => {
                  onClick={() => handlePromote(pc)}/>
         )
     }
+    const handleDrag = (e) => {
+        e.dataTransfer.effectAllowed = "copyMove"; // remove green plus sign on browser
+        if (chessCtx.game.turnColour !== piece.colour) { // not the turn
+            return
+        }
+        // get moves first
+        const moves = piece.getMoves(chessCtx.game.board)
+        chessCtx.setMoves(moves, piece)
+        e.dataTransfer.setData("text", e.target.id)
+
+    }
+    const allowDrop = (e) => {
+        e.preventDefault()
+    }
+    const handleDrop = (e) => {
+        e.preventDefault()
+        if (isHighlight()) { // is valid move
+            handleClick()
+        }
+    }
     return (
-        <div className={getCSS()} onClick={handleClick}>
+        <div className={getCSS()} onDragOver={allowDrop} onDrop={handleDrop} onClick={handleClick}>
             {isHighlight() && <div className="highlight"></div>}
             {chessCtx.promotion && chessCtx.promotionDetails.row === row && chessCtx.promotionDetails.col === col
                 && <span className="tooltip">{getPromote()}</span>}
-            {piece !== null && <img src={piece.image} className="boardPiece" alt={"piece"}/>}
+            {piece !== null && <img
+                id={row + " " + col}
+                src={piece.image}
+                className="boardPiece"
+                alt={"piece"}
+                draggable="true" onDragStart={handleDrag}
+            />}
         </div>
     )
 }

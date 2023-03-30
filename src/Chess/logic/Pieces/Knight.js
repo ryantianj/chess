@@ -5,6 +5,8 @@ import Move from "../Move"
 import Cell from "../Cell";
 class Knight extends Piece {
     #directions = [[1, 2], [1, -2], [2, 1], [2, -1], [-1, 2], [-1, -2], [-2, 1], [-2, -1]]
+
+    points = 3
     constructor(colour, cell, moves) {
         super(colour, cell, moves)
         if (colour === Piece.WHITE) {

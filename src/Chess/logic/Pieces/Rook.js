@@ -5,6 +5,7 @@ import Move from "../Move"
 import Cell from "../Cell";
 class Rook extends Piece {
     #directions = [[0,1], [1,0], [0,-1],[-1,0]]
+    points = 5
     constructor(colour, cell, moves) {
         super(colour, cell, moves)
         if (colour === Piece.WHITE) {

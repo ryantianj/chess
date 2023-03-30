@@ -7,6 +7,7 @@ class King extends Piece {
     #directions = [[1,1], [-1,-1], [1,-1],[-1,1],[0,1], [1,0], [0,-1],[-1,0]]
     static KING_SIDE = 'king'
     static QUEEN_SIDE = 'queen'
+    points = 99999
     constructor(colour, cell, moves) {
         super(colour, cell, moves)
         if (colour === Piece.WHITE) {
@@ -52,13 +53,13 @@ class King extends Piece {
             const row = this.colour === Piece.BLACK ? 0 : 7
             const col = 6
             filterAttacked.push(new Move(this.cell, new Cell(row, col), this, false,
-                {isCastle: true, rook: new Move(board.getPiece(row, 7).cell, new Cell(row, 5), board.getPiece(row, 7))}))
+                {isCastle: true, rook: new Move(new Cell(row, 7), new Cell(row, 5), board.getPiece(row, 7))}))
         }
         if (board.canCastle(this.colour, King.QUEEN_SIDE, attacked)) {
             const row = this.colour === Piece.BLACK ? 0 : 7
             const col = 2
             filterAttacked.push(new Move(this.cell, new Cell(row, col), this, false,
-                {isCastle: true, rook: new Move(board.getPiece(row, 0).cell, new Cell(row, 3), board.getPiece(row, 0))}))
+                {isCastle: true, rook: new Move(new Cell(row, 0), new Cell(row, 3), board.getPiece(row, 0))}))
         }
         return filterAttacked
     }

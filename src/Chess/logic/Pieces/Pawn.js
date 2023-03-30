@@ -4,6 +4,7 @@ import imageBlack from "../../images/bp.png"
 import Move from "../Move"
 import Cell from "../Cell";
 class Pawn extends Piece {
+    points = 1
     constructor(colour, cell, moves) {
         super(colour, cell, moves)
         if (colour === Piece.WHITE) {
@@ -113,11 +114,14 @@ class Pawn extends Piece {
         board[newRow][newCol] = this
         board[move.oldCell.row][move.oldCell.col] = null
         this.cell = new Cell(newRow, newCol)
-        this.moves.push(move)
+
         // promotion
         if (newRow === 0 || newRow === 7) {
+            move.isPromotion = true
+            this.moves.push(move)
             return {promotion: true, row: newRow, col: newCol}
         }
+        this.moves.push(move)
         return {row: newRow, col: newCol}
     }
 }

@@ -14,6 +14,24 @@ class Game {
         this.turnColour = this.turnColour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
         return this.board.movePiece(piece, move)
     }
+    /**
+     * Get pieces eaten by colour
+     * @param colour
+     * @return {*[]}
+     */
+    getEatenPieces = (colour) => {
+        const moves = this.board.moves
+        return moves.filter(move => {
+            return move.ate !== null && move.ate.colour !== colour
+        }).map(x => x.ate)
+    }
+
+    undoMove = () => {
+        const isUndo = this.board.undoMove()
+        if (isUndo) {
+            this.turnColour = this.turnColour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
+        }
+    }
 
 }
 export default Game

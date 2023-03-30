@@ -5,6 +5,7 @@ import Move from "../Move"
 import Cell from "../Cell";
 class Bishop extends Piece {
     #directions = [[1,1], [-1,-1], [1,-1],[-1,1]]
+    points = 3
     constructor(colour, cell, moves) {
         super(colour, cell, moves)
         if (colour === Piece.WHITE) {

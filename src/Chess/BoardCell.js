@@ -52,6 +52,9 @@ const BoardCell = ({row, col, piece}) => {
         if (!rowIsEven && colIsEven) {
             style += "cell greenCell"
         }
+        if (chessCtx.selectedPiece !== null && chessCtx.selectedPiece.cell.row === row && chessCtx.selectedPiece.cell.col === col) {
+            style += " focus"
+        }
         return style
     }
 

@@ -6,6 +6,7 @@ import Bishop from "./Pieces/Bishop";
 import Queen from "./Pieces/Queen";
 import King from "./Pieces/King";
 import knight from "./Pieces/Knight";
+import Knight from "./Pieces/Knight";
 
 
 class Board {
@@ -28,6 +29,39 @@ class Board {
             [new Rook(Piece.WHITE, new Cell(7,0)), new knight(Piece.WHITE, new Cell(7, 1)), new Bishop(Piece.WHITE, new Cell(7, 2)), new Queen(Piece.WHITE, new Cell(7, 3)), new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
         ]
         return startingBoard
+    }
+
+    copyBoard = () => {
+        const newBoard = []
+        for (let row = 0; row < 8; row++) {
+            const newRow = []
+            for (let col = 0; col < 8; col++) {
+                newRow.push(this.clonePiece(this.#board[row][col]))
+            }
+            newBoard.push(newRow)
+        }
+        return newBoard
+    }
+
+    setBoard = (board) => {
+        this.#board = board
+    }
+
+    clonePiece = (piece) => {
+        if (piece instanceof Pawn) {
+            return new Pawn(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof Bishop) {
+            return new Bishop(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof King) {
+            return new King(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof Knight) {
+            return new Knight(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof Queen) {
+            return new Queen(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof Rook) {
+            return new Rook(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        }
+        return null
     }
 
     /**
@@ -236,6 +270,33 @@ class Board {
 
     isGameOver = (colour) => {
         return this.isCheck(colour) && this.getAllMoves(colour).length <= 0
+    }
+
+    getScore = (colour) => {
+        let total = 0
+        for (let row = 0; row < 8; row ++) {
+            for (let col = 0; col < 8; col ++) {
+                const piece = this.#board[row][col]
+                if (piece instanceof Piece && piece.colour === colour) {
+                    total += piece.points
+                }
+            }
+        }
+        return total
+    }
+
+    getAllMoves = (colour) => {
+        let squares = []
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (!this.isEmpty(row, col) && this.getPiece(row, col).colour === colour) {
+                    const piece = this.getPiece(row, col)
+                    const moves = piece.getMoves(this)
+                    squares = squares.concat(moves)
+                }
+            }
+        }
+        return squares
     }
 
 }

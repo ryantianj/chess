@@ -33,5 +33,11 @@ class Game {
         }
     }
 
+    copyBoard = () => {
+        const newBoard = new Board()
+        newBoard.setBoard(this.board.copyBoard())
+        return newBoard
+    }
+
 }
 export default Game

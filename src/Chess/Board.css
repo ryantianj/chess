@@ -60,6 +60,10 @@
     z-index: 10;
 }
 
+.focus {
+    background-color: yellow;
+}
+
 .tooltip {
     width: 300px;
     background-color: black;

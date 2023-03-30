@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import Game from "./logic/Game";
 import Piece from "./logic/Piece";
+import ab from "./ai/MiniMax";
 
 const ChessContext = React.createContext({
     game: null,
@@ -33,6 +34,7 @@ export const ChessContextProvider = (props) => {
         setHighlightCell(prevState => {
             return newArray
         })
+        ab(game)
     }
 
     // get move that was selected by user
@@ -62,6 +64,7 @@ export const ChessContextProvider = (props) => {
             setPromotion(true)
             setPromotionDetails(result)
         }
+        setSelectedPiece(null)
         setHighlightCell([])
     }
 

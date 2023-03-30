@@ -77,3 +77,19 @@
     justify-content: center;
     align-items: center;
 }
+
+@media only screen and (max-width: 768px) {
+    .chessBoard {
+        grid-template-columns: 11vw 11vw 11vw 11vw 11vw 11vw 11vw 11vw;
+        grid-template-rows: 11vw 11vw 11vw 11vw 11vw 11vw 11vw 11vw;
+    }
+    .boardPiece {
+        width: 11vw;
+        height: 11vw;
+    }
+
+    .promotionPiece {
+        width: 11vw;
+        height: 11vw;
+    }
+}

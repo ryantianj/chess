@@ -1,7 +1,6 @@
 import Pawn from "./Pieces/Pawn";
 import Piece from "./Piece"
 import Cell from "./Cell";
-import Knight from "./Pieces/Knight";
 import Rook from "./Pieces/Rook";
 import Bishop from "./Pieces/Bishop";
 import Queen from "./Pieces/Queen";

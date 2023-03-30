@@ -2,6 +2,7 @@ import React, {useContext} from "react";
 import "./Player.css"
 import Piece from "./logic/Piece";
 import ChessContext from "./ChessContext";
+import Clock from "../components/Clock";
 
 const Player = ({colour}) => {
     const chessCtx = useContext(ChessContext)
@@ -33,11 +34,16 @@ const Player = ({colour}) => {
     }
     return (
         <div style={playerStyle()} className="player">
-            <p>{colour === Piece.BLACK ? "Black" : "White"}</p>
-            <div className="eatenPieces">
-                {chessCtx.game.getEatenPieces(colour)
-                .map((piece, i) => <img src={piece.image} alt={"piece"} key={i} className="eatenPiece"/>)}
-                {getScore()}
+            <div className="info">
+                <p>{colour === Piece.BLACK ? "Black" : "White"}</p>
+                <div className="eatenPieces">
+                    {chessCtx.game.getEatenPieces(colour)
+                        .map((piece, i) => <img src={piece.image} alt={"piece"} key={i} className="eatenPiece"/>)}
+                    {getScore()}
+                </div>
+            </div>
+            <div className="clock">
+                <Clock colour={colour}/>
             </div>
         </div>
     )

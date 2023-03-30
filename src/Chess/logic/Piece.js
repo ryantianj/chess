@@ -13,8 +13,11 @@ class Piece {
 
     // special
     // en passant: use moves done
-    // castling: use moves + need check if pieces are under attack
-    // promotion: row, col half done
+    // castling: use moves + need check if pieces are under attack done
+    // promotion: row, col done
     // pieces that can move under check
+    // for each piece move, calculate if its legal (king will not be under check) done
+    // if move is executed, king should not be under check
+    // TODO: is game over: king under check + no piece of that colour can move
 }
 export default Piece

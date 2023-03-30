@@ -15,7 +15,7 @@ const startingBoard = [
     [null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null],
-    [new Pawn(Piece.WHITE, new Cell(6, 0), []), new Pawn(Piece.WHITE, new Cell(6, 1), []), new Pawn(Piece.WHITE, new Cell(6, 2), []), new Pawn(Piece.WHITE, new Cell(6, 3), []), new Pawn(Piece.WHITE, new Cell(6, 4), []), new Pawn(Piece.WHITE, new Cell(6, 5), []), new Pawn(Piece.WHITE, new Cell(6, 6), []), new Pawn(Piece.WHITE, new Cell(6, 7), [])],
+    [new Pawn(Piece.WHITE, new Cell(6, 0)), new Pawn(Piece.WHITE, new Cell(6, 1)), new Pawn(Piece.WHITE, new Cell(6, 2), []), new Pawn(Piece.WHITE, new Cell(6, 3), []), new Pawn(Piece.WHITE, new Cell(6, 4), []), new Pawn(Piece.WHITE, new Cell(6, 5), []), new Pawn(Piece.WHITE, new Cell(6, 6), []), new Pawn(Piece.WHITE, new Cell(6, 7), [])],
     [new Rook(Piece.WHITE, new Cell(7,0)), new knight(Piece.WHITE, new Cell(7, 1)), new Bishop(Piece.WHITE, new Cell(7, 2)), new Queen(Piece.WHITE, new Cell(7, 3)), new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
 ]
 class Board {
@@ -27,16 +27,7 @@ class Board {
     }
 
     #newBoard = () => {
-        return [
-            [null, null, null, null, new King(Piece.BLACK, new Cell(0, 4)), new Bishop(Piece.BLACK, new Cell(0, 5)), new knight(Piece.BLACK, new Cell(0, 6)), new Rook(Piece.BLACK, new Cell(0,7))],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, null, null, null, null],
-            [null, null, null, null, new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
-        ]
+        return startingBoard
     }
 
     /**
@@ -92,7 +83,11 @@ class Board {
         }
         return true
     }
-
+    /**
+     * Returns the squares, marked by moves, that are under attack by the opposing colour
+     * @param colour
+     * @return {*[]}
+     */
     getAttackingSquares = (colour) => { // colour is for piece being attacked
         let squares = []
         for (let row = 0; row < 8; row++) {
@@ -113,6 +108,23 @@ class Board {
         return result
     }
 
+    undoMove = () => {
+        const move = this.moves.pop()
+        const prevRow = move.oldCell.row
+        const prevCol = move.oldCell.col
+        const piece = this.#board[move.newCell.row][move.newCell.col]
+        this.#board[prevRow][prevCol] = piece
+        piece.moves.pop()
+        piece.cell.row = prevRow
+        piece.cell.col = prevCol
+        if (move.isEnPassant) {
+            this.#board[move.ate.cell.row][move.ate.cell.col] = move.ate
+            this.#board[move.newCell.row][move.newCell.col] = null
+        } else {
+            this.#board[move.newCell.row][move.newCell.col] = move.ate
+        }
+    }
+
     kingHasMoved = (colour) => {
         for (const move of this.moves) {
             if (move.piece instanceof King && move.piece.colour === colour) {
@@ -122,20 +134,97 @@ class Board {
         return false
     }
 
-    rookHasMoved = (colour, col) => {
+    rookHasMoved = (colour, side) => {
         const row = colour === Piece.BLACK ? 0 : 7
+        const col = side === King.KING_SIDE ? 7 : 0
         if (!(this.getPiece(row, col) instanceof Rook)) { // no rook on cell
             return true
         }
         for (const move of this.moves) {
-            if (move.piece instanceof Rook && move.piece.colour === colour) {
+            if (move.piece instanceof Rook && move.piece.colour === colour && move.oldCell.row === row && move.oldCell.col === col) {
                 return true
             }
         }
         return false
     }
-    castlingSquaresUnderAttack = (colour, attacked) => { // includes the king himself
 
+    castlingSquaresIsEmpty = (colour, side) => {
+        const row = colour === Piece.BLACK ? 0 : 7
+        const cols = side === King.KING_SIDE ? [5,6] : [1,2,3]
+        for (const col of cols) {
+            if (!this.isEmpty(row, col)) {
+                return false
+            }
+        }
+        return true
+    }
+    castlingSquaresUnderAttack = (colour, side, attacked) => { // includes the king himself
+        const row = colour === Piece.BLACK ? 0 : 7
+        const cols = side === King.KING_SIDE ? [4,5,6] : [1,2,3,4]
+        for (const col of cols) {
+            for (const move of attacked) {
+                if (move.newCell.row === row && move.newCell.col === col) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    canCastle = (colour, side, attacked) => {
+        // console.log(this.castlingSquaresIsEmpty(colour, side) , !this.castlingSquaresUnderAttack(colour, side, attacked)
+        //     , !this.rookHasMoved(colour, side) , !this.kingHasMoved(colour))
+        return this.castlingSquaresIsEmpty(colour, side) && !this.castlingSquaresUnderAttack(colour, side, attacked)
+        && !this.rookHasMoved(colour, side) && !this.kingHasMoved(colour)
+    }
+
+    promotePiece = (piece) => {
+        const row = piece.cell.row
+        const col = piece.cell.col
+        this.#board[row][col] = piece
+    }
+
+    // returns if colour is under check
+    isCheck = (colour) => {
+        const attacked = this.getAttackingSquares(colour)
+        for (const move of attacked) {
+            if (this.getPiece(move.newCell.row, move.newCell.col) instanceof King
+                && this.getPiece(move.newCell.row, move.newCell.col).colour === colour) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * This functions determines if a move will result in your own King being under check (illegal move)
+     * @param piece
+     * @param move
+     */
+    willCheck = (piece, move) => {
+        this.movePiece(piece, move)
+        if (this.isCheck(piece.colour)) {
+            this.undoMove()
+            return true
+        }
+        this.undoMove()
+        return false
+    }
+    getAllMoves = (colour) => {
+        let moves = []
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.#board[row][col]
+                if (piece !== null && this.getPiece(row, col).colour === colour) {
+                    moves = moves.concat(this.getPiece(row, col).getMoves(this))
+                }
+            }
+        }
+        return moves
+    }
+
+    isGameOver = (colour) => {
+        return this.isCheck(colour) && this.getAllMoves(colour).length <= 0
     }
 
 }

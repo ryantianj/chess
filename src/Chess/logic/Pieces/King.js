@@ -5,6 +5,8 @@ import Move from "../Move"
 import Cell from "../Cell";
 class King extends Piece {
     #directions = [[1,1], [-1,-1], [1,-1],[-1,1],[0,1], [1,0], [0,-1],[-1,0]]
+    static KING_SIDE = 'king'
+    static QUEEN_SIDE = 'queen'
     constructor(colour, cell, moves) {
         super(colour, cell, moves)
         if (colour === Piece.WHITE) {
@@ -29,7 +31,10 @@ class King extends Piece {
             const newRow = row + currentRow
             const newCol = col + currentCol
             if (((board.canEat(newRow, newCol, this.colour) || board.canMove(newRow, newCol))) && board.canKingMove(newRow, newCol, this.colour)) {
-                moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
+                const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                if (!board.willCheck(this, move)) {
+                    moves.push(move)
+                }
             }
         }
 
@@ -43,7 +48,18 @@ class King extends Piece {
         })
         // castling move: if king has not moved + rook on respective square has not moved done
         // + squares in between and king not attacked  + squares in between are empty
-        console.log(board.kingHasMoved(this.colour), board.rookHasMoved(this.colour, 0), board.rookHasMoved(this.colour, 7))
+        if (board.canCastle(this.colour, King.KING_SIDE, attacked)) {
+            const row = this.colour === Piece.BLACK ? 0 : 7
+            const col = 6
+            filterAttacked.push(new Move(this.cell, new Cell(row, col), this, false,
+                {isCastle: true, rook: new Move(board.getPiece(row, 7).cell, new Cell(row, 5), board.getPiece(row, 7))}))
+        }
+        if (board.canCastle(this.colour, King.QUEEN_SIDE, attacked)) {
+            const row = this.colour === Piece.BLACK ? 0 : 7
+            const col = 2
+            filterAttacked.push(new Move(this.cell, new Cell(row, col), this, false,
+                {isCastle: true, rook: new Move(board.getPiece(row, 0).cell, new Cell(row, 3), board.getPiece(row, 0))}))
+        }
         return filterAttacked
     }
     getAttack = (board) => {
@@ -56,7 +72,16 @@ class King extends Piece {
         const board = boardObject.getBoard()
         const newRow = move.newCell.row
         const newCol = move.newCell.col
-
+        if (move.castle.isCastle) {
+            board[move.castle.rook.newCell.row][move.castle.rook.newCell.col] = move.castle.rook.piece
+            board[move.castle.rook.oldCell.row][move.castle.rook.oldCell.col] = null
+            move.castle.rook.piece.cell.row = move.castle.rook.newCell.row
+            move.castle.rook.piece.cell.col = move.castle.rook.newCell.col
+        }
+        const oldPiece = board[newRow][newCol]
+        if (oldPiece !== null) {
+            move.ate = oldPiece
+        }
         board[newRow][newCol] = this
         board[move.oldCell.row][move.oldCell.col] = null
         this.cell = new Cell(newRow, newCol)

@@ -28,7 +28,10 @@ class Rook extends Piece {
             let newRow = row + currentRow
             let newCol = col + currentCol
             while (board.canMove(newRow, newCol) || board.canEat(newRow, newCol, this.colour)) {
-                moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
+                const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                if (!board.willCheck(this, move)) {
+                    moves.push(move)
+                }
                 if (board.canEat(newRow, newCol, this.colour)) {
                     break
                 }
@@ -48,7 +51,8 @@ class Rook extends Piece {
             let newRow = row + currentRow
             let newCol = col + currentCol
             while (board.canMove(newRow, newCol) || board.canEatDefend(newRow, newCol)) {
-                moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
+                const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                moves.push(move)
                 if (board.canEatDefend(newRow, newCol)) {
                     break
                 }
@@ -65,6 +69,10 @@ class Rook extends Piece {
         const board = boardObject.getBoard()
         const newRow = move.newCell.row
         const newCol = move.newCell.col
+        const oldPiece = board[newRow][newCol]
+        if (oldPiece !== null) {
+            move.ate = oldPiece
+        }
 
         board[newRow][newCol] = this
         board[move.oldCell.row][move.oldCell.col] = null

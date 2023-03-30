@@ -1,6 +1,10 @@
 import React, {useContext} from "react";
 import "./Board.css"
 import ChessContext from "./ChessContext";
+import Queen from "./logic/Pieces/Queen";
+import Rook from "./logic/Pieces/Rook";
+import Knight from "./logic/Pieces/Knight";
+import Bishop from "./logic/Pieces/Bishop";
 
 const BoardCell = ({row, col, piece}) => {
     const chessCtx = useContext(ChessContext)
@@ -26,10 +30,10 @@ const BoardCell = ({row, col, piece}) => {
         if (chessCtx.game.turnColour !== piece.colour) { // not the turn
             return
         }
-        if (piece !== null) { // set moves of a piece
-            const moves = piece.getMoves(chessCtx.game.board)
-            chessCtx.setMoves(moves, piece)
-        }
+         // set moves of a piece
+        const moves = piece.getMoves(chessCtx.game.board)
+        chessCtx.setMoves(moves, piece)
+
     }
     const getCSS = () => {
         const rowIsEven = row % 2 === 0
@@ -51,16 +55,25 @@ const BoardCell = ({row, col, piece}) => {
         return style
     }
 
+    const handlePromote = (pc) => {
+        chessCtx.promote(pc)
+    }
+
     const getPromote = () => {
-        // put pieces here, map images
-        return []
+        const pieces = [new Queen(piece.colour, piece.cell), new Rook(piece.colour, piece.cell)
+            , new Knight(piece.colour, piece.cell), new Bishop(piece.colour, piece.cell)]
+
+        return pieces.map((pc, i) =>
+            <img src={pc.image} alt={"piece"} className="promotionPiece" key={i}
+                 onClick={() => handlePromote(pc)}/>
+        )
     }
     return (
         <div className={getCSS()} onClick={handleClick}>
             {isHighlight() && <div className="highlight"></div>}
             {chessCtx.promotion && chessCtx.promotionDetails.row === row && chessCtx.promotionDetails.col === col
                 && <span className="tooltip">{getPromote()}</span>}
-            {piece !== null && <img src={piece.image} className="boardPiece"/>}
+            {piece !== null && <img src={piece.image} className="boardPiece" alt={"piece"}/>}
         </div>
     )
 }

@@ -17,6 +17,12 @@
     z-index: 9;
 }
 
+.promotionPiece {
+    width: 70px;
+    height: 70px;
+    z-index: 12;
+}
+
 .cell {
     height: 100%;
     width: 100%;
@@ -51,7 +57,7 @@
 }
 
 .tooltip {
-    width: 120px;
+    width: 300px;
     background-color: black;
     color: white;
     text-align: center;
@@ -62,4 +68,8 @@
     bottom: 10%;
     left: 50%;
     margin-left: -60px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
 }

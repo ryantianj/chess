@@ -28,7 +28,10 @@ class Knight extends Piece {
             const newRow = row + currentRow
             const newCol = col + currentCol
             if (board.canEat(newRow, newCol, this.colour) || board.canMove(newRow, newCol)) {
-                moves.push(new Move(this.cell, new Cell(newRow, newCol), this))
+                const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                if (!board.willCheck(this, move)) {
+                    moves.push(move)
+                }
             }
         }
         return moves
@@ -55,7 +58,10 @@ class Knight extends Piece {
         const board = boardObject.getBoard()
         const newRow = move.newCell.row
         const newCol = move.newCell.col
-
+        const oldPiece = board[newRow][newCol]
+        if (oldPiece !== null) {
+            move.ate = oldPiece
+        }
         board[newRow][newCol] = this
         board[move.oldCell.row][move.oldCell.col] = null
         this.cell = new Cell(newRow, newCol)

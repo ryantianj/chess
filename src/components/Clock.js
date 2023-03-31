@@ -23,6 +23,12 @@ const Clock = ({colour}) => {
         reset()
     }, [chessCtx.game])
 
+    useEffect(() => {
+        if (chessCtx.gameOver.isGameOver) {
+            setIsRunning(false)
+        }
+    }, [chessCtx.gameOver.isGameOver])
+
     const minutes = Math.floor(time / 60);
 
     const seconds = Math.floor(time % 60);

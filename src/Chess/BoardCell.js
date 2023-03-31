@@ -56,6 +56,12 @@ const BoardCell = ({row, col, piece}) => {
         if (chessCtx.selectedPiece !== null && chessCtx.selectedPiece.cell.row === row && chessCtx.selectedPiece.cell.col === col) {
             style += " focus"
         }
+        if (chessCtx.game.board.moves.length > 0) {
+            const newCell = chessCtx.game.board.moves.slice(-1)[0].newCell
+            if (newCell.row === row && newCell.col === col) {
+                style += " focus"
+            }
+        }
         return style
     }
 

@@ -120,7 +120,7 @@ export const ChessContextProvider = (props) => {
         setSelectedPiece(null)
         if (game.turnColour === Piece.BLACK) {
             if (ai) {
-                // console.log("calling worker")
+                // console.log("calling worker", game.board.getBoardString())
                 myWorker.postMessage([game.board.getBoardString(), 3])
             }
         }

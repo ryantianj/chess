@@ -369,7 +369,11 @@ class Board {
             for (let col = 0; col < 8; col++) {
                 const piece = this.getPiece(row, col)
                 if (piece !== null) {
-                    newRow.push(piece.getString())
+                    if (piece instanceof Pawn && (row === 0 || row === 7)) {
+                        newRow.push(new Queen(piece.colour, piece.cell).getString())
+                    } else {
+                        newRow.push(piece.getString())
+                    }
                 } else {
                     newRow.push(null)
                 }

@@ -128,7 +128,7 @@ export const ChessContextProvider = (props) => {
 
     useEffect(() => {
         myWorker.onerror = (ev) => {
-            alert("Engine error: " + ev)
+            alert("Engine error: " + ev.message)
         }
         myWorker.onmessage = (message) => {
              const parsePiece = (pieceString, row, col) => {

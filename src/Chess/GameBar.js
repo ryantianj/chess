@@ -22,6 +22,7 @@ const GameBar = () => {
                     closeModal={() => setModalOpen(false)}
                 />
             } />}
+
             <Button onClick={() => chessCtx.newGame()}>New Game</Button>
             <Button onClick={() => chessCtx.undo()}>Undo</Button>
         </div>

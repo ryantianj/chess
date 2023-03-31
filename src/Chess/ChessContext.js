@@ -37,7 +37,7 @@ export const ChessContextProvider = (props) => {
         setHighlightCell(prevState => {
             return newArray
         })
-        ab(game)
+        // ab(game)
     }
 
     // get move that was selected by user

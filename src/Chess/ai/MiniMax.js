@@ -1,9 +1,12 @@
 import Piece from "../logic/Piece";
-
+let nodes = 0
 const ab = (game) => {
+    nodes = 0
+    const start = performance.now()
     const copyBoard = game.copyBoard()
-    const result = miniMax(copyBoard, 2, -Number.MAX_VALUE, Number.MAX_VALUE, Piece.BLACK, Piece.BLACK)
-    console.log(result)
+    const result = miniMax(copyBoard, 3, -Number.MAX_VALUE, Number.MAX_VALUE, Piece.BLACK, Piece.BLACK)
+    const end = performance.now()
+    console.log(nodes, end - start, result)
     return result // should be a move
 }
 
@@ -16,7 +19,8 @@ const switchColour = (colour) => {
 }
 
 const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
-    if (depth === 0 || board.isGameOver()) {
+    nodes+=1
+    if (depth === 0 || board.isGameOver(currentPlayer).isGameOver) {
         return [null, evaluate(board, maxPlayer)]
     }
     const moves = board.getAllMoves(currentPlayer)

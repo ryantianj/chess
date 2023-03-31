@@ -6,6 +6,7 @@ import Bishop from "./Pieces/Bishop";
 import Queen from "./Pieces/Queen";
 import King from "./Pieces/King";
 import knight from "./Pieces/Knight";
+import Knight from "./Pieces/Knight";
 
 class Board {
     #board;
@@ -27,6 +28,39 @@ class Board {
             [new Rook(Piece.WHITE, new Cell(7,0)), new knight(Piece.WHITE, new Cell(7, 1)), new Bishop(Piece.WHITE, new Cell(7, 2)), new Queen(Piece.WHITE, new Cell(7, 3)), new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
         ]
         return startingBoard
+    }
+
+    copyBoard = () => {
+        const newBoard = []
+        for (let row = 0; row < 8; row++) {
+            const newRow = []
+            for (let col = 0; col < 8; col++) {
+                newRow.push(this.clonePiece(this.#board[row][col]))
+            }
+            newBoard.push(newRow)
+        }
+        return newBoard
+    }
+
+    setBoard = (board) => {
+        this.#board = board
+    }
+
+    clonePiece = (piece) => {
+        if (piece instanceof Pawn) {
+            return new Pawn(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof Bishop) {
+            return new Bishop(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof King) {
+            return new King(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof Knight) {
+            return new Knight(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof Queen) {
+            return new Queen(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        } else if (piece instanceof Rook) {
+            return new Rook(piece.colour, new Cell(piece.cell.row, piece.cell.col))
+        }
+        return null
     }
 
     /**
@@ -127,6 +161,8 @@ class Board {
             }
             if (move.castle.isCastle) { // king will be undone, need to undo rook
                 this.#board[move.castle.rook.oldCell.row][move.castle.rook.oldCell.col] = move.castle.rook.piece
+                move.castle.rook.piece.cell.row = move.castle.rook.oldCell.row
+                move.castle.rook.piece.cell.col = move.castle.rook.oldCell.col
                 this.#board[move.castle.rook.newCell.row][move.castle.rook.newCell.col] = null
             }
             this.#board[move.newCell.row][move.newCell.col] = move.ate
@@ -276,6 +312,60 @@ class Board {
             return {isGameOver: true, message: "Draw by threefold repetition"}
         }
         return {isGameOver: false, message: ""}
+    }
+
+    getAllMoves = (colour) => {
+        let squares = []
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                if (!this.isEmpty(row, col) && this.getPiece(row, col).colour === colour) {
+                    const piece = this.getPiece(row, col)
+                    const moves = piece.getMoves(this)
+                    squares = squares.concat(moves)
+                }
+            }
+        }
+        return squares
+    }
+
+    /**
+     * used for minimax heuristics
+     * @param colour colour making the next move
+     * @return {number} score of position
+     */
+    getScore = (colour) => {
+        let whiteScore = 0
+        let blackScore = 0
+        let materialScore = 0
+        for (let row = 0; row < 8; row ++) {
+            for (let col = 0; col < 8; col ++) {
+                const piece = this.#board[row][col]
+                if (piece instanceof Piece && piece.colour === colour) {
+                    materialScore += piece.points
+                }
+                if (piece instanceof Piece && piece.colour !== colour) {
+                    materialScore -= piece.points
+                }
+            }
+        }
+        return materialScore
+    }
+
+    getBoardString = () => {
+        const newBoard = []
+        for (let row = 0; row < 8; row++) {
+            const newRow = []
+            for (let col = 0; col < 8; col++) {
+                const piece = this.getPiece(row, col)
+                if (piece !== null) {
+                    newRow.push(piece.getString())
+                } else {
+                    newRow.push(null)
+                }
+            }
+            newBoard.push(newRow)
+        }
+        return newBoard
     }
 
 }

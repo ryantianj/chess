@@ -7,7 +7,7 @@ class King extends Piece {
     #directions = [[1,1], [-1,-1], [1,-1],[-1,1],[0,1], [1,0], [0,-1],[-1,0]]
     static KING_SIDE = 'king'
     static QUEEN_SIDE = 'queen'
-    points = 99999
+    points = 0
     constructor(colour, cell, moves) {
         super(colour, cell, moves)
         if (colour === Piece.WHITE) {
@@ -90,6 +90,11 @@ class King extends Piece {
 
         return {row: newRow, col: newCol}
 
+    }
+
+    getString = () => {
+        const colourString = this.colour === Piece.WHITE ? "w" : "b"
+        return colourString + "k"
     }
 }
 

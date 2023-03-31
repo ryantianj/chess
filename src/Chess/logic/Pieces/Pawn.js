@@ -124,6 +124,11 @@ class Pawn extends Piece {
         this.moves.push(move)
         return {row: newRow, col: newCol}
     }
+
+    getString = () => {
+        const colourString = this.colour === Piece.WHITE ? "w" : "b"
+        return colourString + "p"
+    }
 }
 
 export default Pawn

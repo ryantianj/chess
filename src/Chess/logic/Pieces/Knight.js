@@ -72,6 +72,11 @@ class Knight extends Piece {
         return {row: newRow, col: newCol}
 
     }
+
+    getString = () => {
+        const colourString = this.colour === Piece.WHITE ? "w" : "b"
+        return colourString + "n"
+    }
 }
 
 export default Knight

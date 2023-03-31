@@ -11,8 +11,9 @@ class Game {
     }
 
     movePiece = (piece, move) => {
+        const result =  this.board.movePiece(piece, move)
         this.turnColour = this.turnColour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
-        return this.board.movePiece(piece, move)
+        return result
     }
     /**
      * Get pieces eaten by colour
@@ -31,6 +32,12 @@ class Game {
         if (isUndo) {
             this.turnColour = this.turnColour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
         }
+    }
+
+    copyBoard = () => {
+        const newBoard = new Board()
+        newBoard.setBoard(this.board.copyBoard())
+        return newBoard
     }
 
 }

@@ -341,9 +341,29 @@ class Board {
                 if (piece instanceof Piece && piece.colour === colour) {
                     materialScore += piece.points
                 }
+                if (piece instanceof Piece && piece.colour !== colour) {
+                    materialScore -= piece.points
+                }
             }
         }
         return materialScore
+    }
+
+    getBoardString = () => {
+        const newBoard = []
+        for (let row = 0; row < 8; row++) {
+            const newRow = []
+            for (let col = 0; col < 8; col++) {
+                const piece = this.getPiece(row, col)
+                if (piece !== null) {
+                    newRow.push(piece.getString())
+                } else {
+                    newRow.push(null)
+                }
+            }
+            newBoard.push(newRow)
+        }
+        return newBoard
     }
 
 }

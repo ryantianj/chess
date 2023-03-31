@@ -5,6 +5,7 @@ import Queen from "./logic/Pieces/Queen";
 import Rook from "./logic/Pieces/Rook";
 import Knight from "./logic/Pieces/Knight";
 import Bishop from "./logic/Pieces/Bishop";
+import Piece from "./logic/Piece";
 
 const BoardCell = ({row, col, piece}) => {
     const chessCtx = useContext(ChessContext)
@@ -92,7 +93,8 @@ const BoardCell = ({row, col, piece}) => {
         }
     }
     return (
-        <div className={getCSS()} onDragOver={allowDrop} onDrop={handleDrop} onClick={handleClick}>
+        <button className={getCSS()} onDragOver={allowDrop} onDrop={handleDrop} onClick={handleClick}
+                disabled={chessCtx.ai && piece !== null && piece.colour === Piece.BLACK}>
             {isHighlight() && <div className="highlight"></div>}
             {chessCtx.promotion && chessCtx.promotionDetails.row === row && chessCtx.promotionDetails.col === col
                 && <span className="tooltip">{getPromote()}</span>}
@@ -103,7 +105,7 @@ const BoardCell = ({row, col, piece}) => {
                 alt={"piece"}
                 draggable="true" onDragStart={handleDrag}
             />}
-        </div>
+        </button>
     )
 }
 export default BoardCell

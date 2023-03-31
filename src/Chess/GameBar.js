@@ -23,7 +23,8 @@ const GameBar = () => {
                 />
             } />}
             <Button onClick={() => chessCtx.newGame()}>New Game</Button>
-            <Button onClick={() => chessCtx.undo()}>Undo</Button>
+            {!chessCtx.ai && <Button onClick={() => chessCtx.undo()}>Undo</Button>}
+            <Button onClick={() => chessCtx.toggleEngine()}>Toggle Engine</Button>
         </div>
     )
 }

@@ -81,6 +81,11 @@ class Bishop extends Piece {
         return {row: newRow, col: newCol}
 
     }
+
+    getString = () => {
+        const colourString = this.colour === Piece.WHITE ? "w" : "b"
+        return colourString + "b"
+    }
 }
 
 export default Bishop

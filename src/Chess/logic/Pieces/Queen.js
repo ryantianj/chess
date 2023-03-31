@@ -81,6 +81,11 @@ class Queen extends Piece {
         return {row: newRow, col: newCol}
 
     }
+
+    getString = () => {
+        const colourString = this.colour === Piece.WHITE ? "w" : "b"
+        return colourString + "q"
+    }
 }
 
 export default Queen

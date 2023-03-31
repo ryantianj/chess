@@ -1,13 +1,12 @@
 import Piece from "../logic/Piece";
 let nodes = 0
-const ab = (game) => {
+const ab =  async (game) => {
     nodes = 0
-    const start = performance.now()
-    const copyBoard = game.copyBoard()
-    const result = miniMax(copyBoard, 3, -Number.MAX_VALUE, Number.MAX_VALUE, Piece.BLACK, Piece.BLACK)
-    const end = performance.now()
-    console.log(nodes, end - start, result)
-    return result // should be a move
+    // const start = performance.now()
+    const result =  await miniMax([], 3, -Number.MAX_VALUE, Number.MAX_VALUE, Piece.BLACK, Piece.BLACK)
+    // const end = performance.now()
+    // console.log(nodes, end - start, result)
+    return result[0] // should be a move
 }
 
 const evaluate = (board, colour) => {
@@ -18,7 +17,7 @@ const switchColour = (colour) => {
     return colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
 }
 
-const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
+const miniMax = async (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
     nodes+=1
     if (depth === 0 || board.isGameOver(currentPlayer).isGameOver) {
         return [null, evaluate(board, maxPlayer)]

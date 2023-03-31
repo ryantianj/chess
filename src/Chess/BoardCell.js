@@ -103,7 +103,7 @@ const BoardCell = ({row, col, piece}) => {
                 src={piece.image}
                 className="boardPiece"
                 alt={"piece"}
-                draggable="true" onDragStart={handleDrag}
+                draggable={chessCtx.ai && piece !== null && piece.colour === Piece.BLACK ? "false" : "true"} onDragStart={handleDrag}
             />}
         </button>
     )

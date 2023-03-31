@@ -40,7 +40,7 @@ export const ChessContextProvider = (props) => {
     const [promotion, setPromotion] = useState(false)
     const [promotionDetails, setPromotionDetails] = useState([])
     const [gameOver, isGameOver] = useState({isGameOver: false})
-    const [ai, isAI] = useState(true)
+    const [ai, isAI] = useState(false)
 
     const toggleEngine = () => {
         if (!ai) {
@@ -121,13 +121,15 @@ export const ChessContextProvider = (props) => {
         setSelectedPiece(null)
         if (game.turnColour === Piece.BLACK) {
             if (ai) {
-                console.log("Asking ai")
-                myWorker.postMessage(game.board.getBoardString())
+                myWorker.postMessage([game.board.getBoardString(), 3])
             }
         }
     }
 
     useEffect(() => {
+        myWorker.onerror = (ev) => {
+            alert("Engine error: " + ev)
+        }
         myWorker.onmessage = (message) => {
              const parsePiece = (pieceString, row, col) => {
                 if (pieceString === null) {
@@ -167,7 +169,7 @@ export const ChessContextProvider = (props) => {
 
             }
         }
-    }, [])
+    }, [engineMove, game.board])
 
     const promote = (piece) => {
         game.board.promotePiece(piece)
@@ -182,11 +184,12 @@ export const ChessContextProvider = (props) => {
             setHighlightCell([])
             setSelectedPiece(null)
             isGameOver({isGameOver: false})
+            isAI(false)
         }
     }
 
     const undo = () => {
-        if (!gameOver) {
+        if (!gameOver.isGameOver) {
             game.undoMove()
             setHighlightCell([])
         }

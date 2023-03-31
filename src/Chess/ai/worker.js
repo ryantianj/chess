@@ -3,18 +3,15 @@ export default () => {
     // eslint-disable-next-line no-restricted-globals
     self.onmessage = async (message) => {
         let nodes = 0
-        const ab =  (boardString) => {
+        const ab =  (boardString, depth) => {
             nodes = 0
-            const start = performance.now()
             const copyBoard = new Board()
             copyBoard.setBoardString(boardString)
-            const result = miniMax(copyBoard, 3, -Number.MAX_VALUE, Number.MAX_VALUE, Piece.BLACK, Piece.BLACK)
-            const end = performance.now()
-            console.log(nodes, end - start, result)
+            const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
             return result[0] // should be a move
         }
 
-        const evaluate = (board, colour) => {
+        const evaluate = (board, colour) => { // TODO: improve heursitics, engine elo determined here
             return board.getScore(colour)
         }
 
@@ -22,8 +19,8 @@ export default () => {
             return colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
         }
 
-        const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
-            nodes+=1
+        const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer) => {
+            // nodes+=1
             if (depth === 0 || board.isGameOver(currentPlayer).isGameOver) {
                 return [null, evaluate(board, maxPlayer)]
             }
@@ -31,11 +28,11 @@ export default () => {
             const randomIndex = Math.floor(Math.random() * (moves.length - 1))
             let bestMove = moves.length > 0 ? moves[randomIndex] : null
 
-            if (currentPlayer === maxPlayer) {
+            if (isMax){
                 let maxEval = -Number.MAX_VALUE
                 for (const move of moves) {
                     board.movePiece(move.piece, move)
-                    const currentEval = miniMax(board, depth - 1, alpha, beta, maxPlayer, switchColour(currentPlayer))[1]
+                    const currentEval = miniMax(board, depth - 1, alpha, beta, false, maxPlayer, switchColour(currentPlayer))[1]
                     board.undoMove()
                     if (currentEval > maxEval) {
                         maxEval = currentEval
@@ -48,10 +45,10 @@ export default () => {
                 }
                 return [bestMove, maxEval]
             } else {
-                let minEval = -Number.MAX_VALUE
+                let minEval = Number.MAX_VALUE
                 for (const move of moves) {
                     board.movePiece(move.piece, move)
-                    const currentEval = miniMax(board, depth - 1, alpha, beta, maxPlayer, switchColour(currentPlayer))[1]
+                    const currentEval = miniMax(board, depth - 1, alpha, beta, true, maxPlayer, switchColour(currentPlayer))[1]
                     board.undoMove()
                     if (currentEval < minEval) {
                         minEval = currentEval
@@ -211,7 +208,7 @@ export default () => {
             }
 
             movePiece = (piece, move) => {
-                const result =  this.board[piece.cell.row][piece.cell.col].movePiece(move, this)
+                const result =  this.board[move.oldCell.row][move.oldCell.col].movePiece(move, this)
                 this.moves.push(move)
                 return result
             }
@@ -236,6 +233,8 @@ export default () => {
                     }
                     if (move.castle.isCastle) { // king will be undone, need to undo rook
                         this.board[move.castle.rook.oldCell.row][move.castle.rook.oldCell.col] = move.castle.rook.piece
+                        move.castle.rook.piece.cell.row = move.castle.rook.oldCell.row
+                        move.castle.rook.piece.cell.col = move.castle.rook.oldCell.col
                         this.board[move.castle.rook.newCell.row][move.castle.rook.newCell.col] = null
                     }
                     this.board[move.newCell.row][move.newCell.col] = move.ate
@@ -410,6 +409,7 @@ export default () => {
                 let whiteScore = 0
                 let blackScore = 0
                 let materialScore = 0
+                const opponentColour = colour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
                 for (let row = 0; row < 8; row ++) {
                     for (let col = 0; col < 8; col ++) {
                         const piece = this.board[row][col]
@@ -421,7 +421,8 @@ export default () => {
                         }
                     }
                 }
-                return materialScore
+                const attackScore = this.getAttackingSquares(opponentColour).length
+                return materialScore * 0.9
             }
 
             getBoardString = () => {
@@ -1064,9 +1065,8 @@ export default () => {
         }
 
 
-        const boardString = message.data
-        const nextMove = ab(boardString)
-        console.log(nextMove)
+        const data = message.data
+        const nextMove = ab(data[0], data[1])
         postMessage(nextMove.getMoveString())
     }
 }

@@ -161,6 +161,8 @@ class Board {
             }
             if (move.castle.isCastle) { // king will be undone, need to undo rook
                 this.#board[move.castle.rook.oldCell.row][move.castle.rook.oldCell.col] = move.castle.rook.piece
+                move.castle.rook.piece.cell.row = move.castle.rook.oldCell.row
+                move.castle.rook.piece.cell.col = move.castle.rook.oldCell.col
                 this.#board[move.castle.rook.newCell.row][move.castle.rook.newCell.col] = null
             }
             this.#board[move.newCell.row][move.newCell.col] = move.ate

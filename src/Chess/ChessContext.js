@@ -161,10 +161,20 @@ export const ChessContextProvider = (props) => {
                     new Cell(data.newCellRow, data.newCellCol),
                     game.board.getPiece(data.oldCellRow, data.oldCellCol),
                     data.isEnPassant,
-                    data.isCastle, // TODO : handle
-                    parsePiece(data.ate),
-                    data.isPromotion // TODO : handle
+                    {isCastle: false}, // TODO : handle
+                    game.board.getPiece(data.newCellRow, data.newCellCol),
+                    data.isPromotion
                     )
+                if (data.isPromotion) {
+                    game.board.promotePiece(new Queen(game.board.getPiece(data.oldCellRow, data.oldCellCol).colour,
+                        game.board.getPiece(data.oldCellRow, data.oldCellCol).cell))
+                }
+                if (data.castle.isCastle) {
+                    const rookObj = data.castle.rook
+                    parseMove.castle.isCastle = true
+                    parseMove.castle.rook = new Move(new Cell(rookObj.oldCellRow, rookObj.oldCellCol)
+                        , new Cell(rookObj.newCellRow, rookObj.newCellCol), game.board.getPiece(rookObj.oldCellRow, rookObj.oldCellCol))
+                }
                 engineMove(parseMove)
 
             }

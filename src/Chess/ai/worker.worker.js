@@ -31,7 +31,10 @@ const test = async (message) => {
             // nodes+=1
             return [null, evaluate(board, maxPlayer)]
         }
-        if (board.isGameOver(currentPlayer).isGameOver) {
+        if (board.isGameOver(currentPlayer).isGameOver && currentPlayer === maxPlayer) {
+            return [null, -Number.MAX_VALUE]
+        }
+        if (board.isGameOver(currentPlayer).isGameOver && currentPlayer !== maxPlayer) {
             return [null, Number.MAX_VALUE]
         }
         const moves = board.getAllMoves(currentPlayer)
@@ -493,7 +496,7 @@ const test = async (message) => {
             const attackScore = attackedSquares[0].length // board control
             const defenseScore = attackedSquares[1].length // defense
             const positionalScore = this.scanSquaresScore(colour, attackedSquares[0], attackedSquares[1])
-            return materialScore * 100 + attackScore * 0.1 + positionalScore
+            return materialScore * 1000 + attackScore + positionalScore
         }
 
         getBoardString = () => {
@@ -692,7 +695,7 @@ const test = async (message) => {
         directions = [[1,1], [-1,-1], [1,-1],[-1,1],[0,1], [1,0], [0,-1],[-1,0]]
         static KING_SIDE = 'king'
         static QUEEN_SIDE = 'queen'
-        points = 0
+        points = 9999
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 
@@ -871,10 +874,18 @@ const test = async (message) => {
                 }
                 newRow = this.cell.row + 2 * this.colour
                 if (board.canMove(newRow, newCol) && this.moves.length <= 0) {
-                    const move = new Move(this.cell, new Cell(newRow, newCol), this)
-                    if (!board.willCheck(this, move)) {
-                        moves.push(move)
+                    if (this.colour === Piece.BLACK && this.cell.row === 1) {
+                        const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                        if (!board.willCheck(this, move)) {
+                            moves.push(move)
+                        }
+                    } else if (this.colour === Piece.WHITE && this.cell.row === 6) {
+                        const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                        if (!board.willCheck(this, move)) {
+                            moves.push(move)
+                        }
                     }
+
                 }
             }
             newRow = this.cell.row + 1 * this.colour

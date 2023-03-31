@@ -11,7 +11,7 @@ const ChessContext = React.createContext({
     promotion: false,
     promotionDetails: {},
     promote: () => {},
-    gameOver: false,
+    gameOver: {isGameOver: false},
     newGame: () => {},
     undo: () => {}
 });
@@ -21,10 +21,13 @@ export const ChessContextProvider = (props) => {
     const [selectedPiece, setSelectedPiece] = useState(null)
     const [promotion, setPromotion] = useState(false)
     const [promotionDetails, setPromotionDetails] = useState([])
-    const [gameOver, isGameOver] = useState(false)
+    const [gameOver, isGameOver] = useState({isGameOver: false})
 
     // display current available moves for a selected piece
     const setMoves = (moves, piece) => {
+        if (gameOver.isGameOver) {
+            return;
+        }
         setSelectedPiece(piece)
         const newArray = []
         for (let i = 0; i < moves.length; i++) {
@@ -51,10 +54,14 @@ export const ChessContextProvider = (props) => {
      * @param col new col coordinate
      */
     const movePiece = (row, col) => {
+        if (gameOver.isGameOver) {
+            return;
+        }
         const result = game.movePiece(selectedPiece, getMove(row, col))
         const opponentColour = selectedPiece.colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
-        if (game.board.isGameOver(opponentColour)) {
-            isGameOver(true)
+        const checkGameOver = game.board.isGameOver(opponentColour)
+        if (checkGameOver.isGameOver) {
+            isGameOver(checkGameOver)
             setHighlightCell([])
             return
         }
@@ -77,7 +84,7 @@ export const ChessContextProvider = (props) => {
             setGame(new Game())
             setHighlightCell([])
             setSelectedPiece(null)
-            isGameOver(false)
+            isGameOver({isGameOver: false})
         }
     }
 

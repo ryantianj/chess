@@ -1,8 +1,11 @@
 
-export default () => {
+
+
     // https://stackoverflow.com/questions/50901954/webworkers-dont-seem-to-be-working-in-production
-    // eslint-disable-next-line no-restricted-globals
-    let onmessage = async (message) => {
+    //https://medium.com/@danilog1905/how-to-use-web-workers-with-react-create-app-and-not-ejecting-in-the-attempt-3718d2a1166b
+    // eslint-disable-next-line no-restricted-globals,no-undef
+    const test = async (message) => {
+        console.log("working")
         let nodes = 0
         const ab =  (boardString, depth) => {
             nodes = 0
@@ -1070,4 +1073,5 @@ export default () => {
         const nextMove = ab(data[0], data[1])
         postMessage(nextMove.getMoveString())
     }
-}
+    // eslint-disable-next-line no-restricted-globals,no-undef
+    self.addEventListener("message", test);

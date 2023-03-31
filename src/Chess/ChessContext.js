@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from "react";
 import Game from "./logic/Game";
 import Piece from "./logic/Piece";
-import ab from "./ai/MiniMax";
 import WorkerBuilder from "./ai/worker-builder";
 import Worker from "./ai/worker";
 import Move from "./logic/Move";

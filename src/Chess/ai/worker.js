@@ -1,8 +1,8 @@
 
 export default () => {
-    // eslint-disable-next-line no-restricted-globals
     // https://stackoverflow.com/questions/50901954/webworkers-dont-seem-to-be-working-in-production
-    this.onmessage = async (message) => {
+    // eslint-disable-next-line no-restricted-globals
+    let onmessage = async (message) => {
         let nodes = 0
         const ab =  (boardString, depth) => {
             nodes = 0

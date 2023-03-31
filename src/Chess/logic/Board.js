@@ -8,7 +8,6 @@ import King from "./Pieces/King";
 import knight from "./Pieces/Knight";
 import Knight from "./Pieces/Knight";
 
-
 class Board {
     #board;
 
@@ -20,12 +19,12 @@ class Board {
     newBoard = () => {
         const startingBoard = [
             [new Rook(Piece.BLACK, new Cell(0,0)), new knight(Piece.BLACK, new Cell(0, 1)), new Bishop(Piece.BLACK, new Cell(0, 2)), new Queen(Piece.BLACK, new Cell(0, 3)), new King(Piece.BLACK, new Cell(0, 4)), new Bishop(Piece.BLACK, new Cell(0, 5)), new knight(Piece.BLACK, new Cell(0, 6)), new Rook(Piece.BLACK, new Cell(0,7))],
-            [new Pawn(Piece.BLACK, new Cell(1, 0), []), new Pawn(Piece.BLACK, new Cell(1, 1), []), new Pawn(Piece.BLACK, new Cell(1, 2), []), new Pawn(Piece.BLACK, new Cell(1, 3), []), new Pawn(Piece.BLACK, new Cell(1, 4), []), new Pawn(Piece.BLACK, new Cell(1, 5), []), new Pawn(Piece.BLACK, new Cell(1, 6), []), new Pawn(Piece.BLACK, new Cell(1, 7), [])],
+            [new Pawn(Piece.BLACK, new Cell(1, 0)), new Pawn(Piece.BLACK, new Cell(1, 1)), new Pawn(Piece.BLACK, new Cell(1, 2)), new Pawn(Piece.BLACK, new Cell(1, 3)), new Pawn(Piece.BLACK, new Cell(1, 4)), new Pawn(Piece.BLACK, new Cell(1, 5)), new Pawn(Piece.BLACK, new Cell(1, 6)), new Pawn(Piece.BLACK, new Cell(1, 7))],
             [null, null, null, null, null, null, null, null],
             [null, null, null, null, null, null, null, null],
             [null, null, null, null, null, null, null, null],
             [null, null, null, null, null, null, null, null],
-            [new Pawn(Piece.WHITE, new Cell(6, 0)), new Pawn(Piece.WHITE, new Cell(6, 1)), new Pawn(Piece.WHITE, new Cell(6, 2), []), new Pawn(Piece.WHITE, new Cell(6, 3), []), new Pawn(Piece.WHITE, new Cell(6, 4), []), new Pawn(Piece.WHITE, new Cell(6, 5), []), new Pawn(Piece.WHITE, new Cell(6, 6), []), new Pawn(Piece.WHITE, new Cell(6, 7), [])],
+            [new Pawn(Piece.WHITE, new Cell(6, 0)), new Pawn(Piece.WHITE, new Cell(6, 1)), new Pawn(Piece.WHITE, new Cell(6, 2)), new Pawn(Piece.WHITE, new Cell(6, 3)), new Pawn(Piece.WHITE, new Cell(6, 4)), new Pawn(Piece.WHITE, new Cell(6, 5)), new Pawn(Piece.WHITE, new Cell(6, 6)), new Pawn(Piece.WHITE, new Cell(6, 7))],
             [new Rook(Piece.WHITE, new Cell(7,0)), new knight(Piece.WHITE, new Cell(7, 1)), new Bishop(Piece.WHITE, new Cell(7, 2)), new Queen(Piece.WHITE, new Cell(7, 3)), new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
         ]
         return startingBoard
@@ -268,8 +267,49 @@ class Board {
         return moves
     }
 
+    /**
+     * Defined by: same position occurs thrice for threefold repetition
+     * @param times
+     * @return {boolean}
+     */
+    isRepeatPosition = (numMoves) => {
+        const lengthCheck = numMoves
+        if (this.moves.length >= lengthCheck) {
+            const getLastNMoves = this.moves.slice(-lengthCheck)
+            let firstMove = getLastNMoves[0]
+            let secondMove = getLastNMoves[1]
+            for (let i = 2; i < lengthCheck; i+=4) {
+                const current = getLastNMoves[i]
+                const currentTwo = getLastNMoves[i+1]
+                if (!(current.newCell.row === firstMove.oldCell.row && current.newCell.col === firstMove.oldCell.col && firstMove.piece === current.piece)) {
+                    return false
+                }
+                if (!(currentTwo.newCell.row === secondMove.oldCell.row && currentTwo.newCell.col === secondMove.oldCell.col && secondMove.piece === currentTwo.piece)) {
+                    return false
+                }
+            }
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Checks if game is over for colour, means other colour wins
+     * @param colour
+     * @return {{isGameOver: boolean, message: string}}
+     */
     isGameOver = (colour) => {
-        return this.isCheck(colour) && this.getAllMoves(colour).length <= 0
+        const allMoves = this.getAllMoves(colour)
+        const underCheck = this.isCheck(colour)
+        const player = colour === Piece.BLACK ? "White" : "Black"
+        if (underCheck && allMoves.length <= 0) {
+            return {isGameOver: true, message: player + " wins by checkmate"}
+        } else if (!underCheck && allMoves.length <= 0) {
+            return {isGameOver: true, message: "Draw by stalemate"}
+        } else if (this.isRepeatPosition(8)) {
+            return {isGameOver: true, message: "Draw by threefold repetition"}
+        }
+        return {isGameOver: false, message: ""}
     }
 
     getScore = (colour) => {

@@ -1,10 +1,10 @@
 import React from "react";
 import "./GameOverModal.css"
 
-const GameOverModal = ({colour, closeModal}) => {
+const GameOverModal = ({message, closeModal}) => {
     return (
         <div className="gameOverModal">
-            {colour} wins!
+            {message}
             <button onClick={closeModal}> close </button>
         </div>
     )

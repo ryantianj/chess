@@ -94,7 +94,7 @@ const BoardCell = ({row, col, piece}) => {
     }
     return (
         <button className={getCSS()} onDragOver={allowDrop} onDrop={handleDrop} onClick={handleClick}
-                disabled={chessCtx.ai && piece !== null && piece.colour === Piece.BLACK}>
+                disabled={chessCtx.ai && piece !== null && piece.colour === Piece.BLACK && chessCtx.game.turnColour === Piece.BLACK}>
             {isHighlight() && <div className="highlight"></div>}
             {chessCtx.promotion && chessCtx.promotionDetails.row === row && chessCtx.promotionDetails.col === col
                 && <span className="tooltip">{getPromote()}</span>}

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import Game from "./logic/Game";
 import Piece from "./logic/Piece";
 import WorkerBuilder from "./ai/worker-builder";
-import Worker from "./ai/worker";
+import Worker from "./ai/worker.worker";
 import Move from "./logic/Move";
 import Cell from "./logic/Cell";
 import Bishop from "./logic/Pieces/Bishop";
@@ -12,7 +12,7 @@ import Pawn from "./logic/Pieces/Pawn";
 import Queen from "./logic/Pieces/Queen";
 import Rook from "./logic/Pieces/Rook";
 
-const myWorker = new WorkerBuilder(Worker)
+const myWorker = new Worker()
 
 const ChessContext = React.createContext({
     game: null,
@@ -120,6 +120,7 @@ export const ChessContextProvider = (props) => {
         setSelectedPiece(null)
         if (game.turnColour === Piece.BLACK) {
             if (ai) {
+                console.log("calling worker")
                 myWorker.postMessage([game.board.getBoardString(), 3])
             }
         }

@@ -204,17 +204,24 @@ const test = async (message) => {
          * @return {*[]}
          */
         getAttackingSquares = (colour) => { // colour is for piece being attacked
-            let squares = []
+            const squares = []
+            const defense = []
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
-                    if (!this.isEmpty(row, col) && this.getPiece(row, col).colour !== colour && !(this.getPiece(row, col) instanceof King)) {
-                        const piece = this.getPiece(row, col)
-                        const moves = piece.getAttack(this)
-                        squares = squares.concat(moves)
+                    if (!this.isEmpty(row, col)) {
+                        const getPc = this.getPiece(row, col)
+                        if (getPc.colour !== colour && !(getPc instanceof King)) {
+                            const moves = getPc.getAttack(this)
+                            squares.push.apply(squares, moves) // better performance
+                        }
+                    // else if (getPc.colour === colour && !(getPc instanceof King)) {
+                    //         const moves = getPc.getAttack(this)
+                    //         defense.push.apply(defense, moves) // TODO: may remove, performance
+                    //     }
                     }
                 }
             }
-            return squares
+            return [squares, defense]
         }
 
         movePiece = (piece, move) => {
@@ -237,11 +244,9 @@ const test = async (message) => {
                     this.board[move.ate.cell.row][move.ate.cell.col] = move.ate
                     this.board[move.newCell.row][move.newCell.col] = null
                     return true
-                }
-                if (move.isPromotion) { // remove piece, add back pawn
+                } else if (move.isPromotion) { // remove piece, add back pawn
                     this.board[prevRow][prevCol] = new Pawn(piece.colour, piece.cell, piece.moves)
-                }
-                if (move.castle.isCastle) { // king will be undone, need to undo rook
+                } else if (move.castle.isCastle) { // king will be undone, need to undo rook
                     this.board[move.castle.rook.oldCell.row][move.castle.rook.oldCell.col] = move.castle.rook.piece
                     move.castle.rook.piece.cell.row = move.castle.rook.oldCell.row
                     move.castle.rook.piece.cell.col = move.castle.rook.oldCell.col
@@ -313,11 +318,12 @@ const test = async (message) => {
         }
 
         // returns if colour is under check
-        isCheck = (colour) => {
-            const attacked = this.getAttackingSquares(colour)
+        isCheck = (colour, attackArray = null) => {
+            const attacked = attackArray === null ? this.getAttackingSquares(colour)[0] : attackArray
             for (const move of attacked) {
-                if (this.getPiece(move.newCell.row, move.newCell.col) instanceof King
-                    && this.getPiece(move.newCell.row, move.newCell.col).colour === colour) {
+                const piece = this.getPiece(move.newCell.row, move.newCell.col)
+                if (piece instanceof King
+                    && piece.colour === colour) {
                     return true
                 }
             }
@@ -409,6 +415,60 @@ const test = async (message) => {
             }
             return squares
         }
+        /**
+         * Goes through board for positional eval, like piece development, hardcoded for black
+         */
+        scanSquaresScore = (colour, attacked, defence) => {
+            const opponentColour = colour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
+            let score = 0
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = this.getPiece(row, col)
+                    if (piece !== null) {
+                        // development
+                        if (piece instanceof Pawn && row !== 1) {
+                            score += 3
+                        } else if (piece instanceof Knight && row !== 0 && (col !== 1
+                            || col !== 6)) {
+                            score += 10
+                        } else if (piece instanceof Rook && row !== 0 && (col !== 0
+                            || col !== 7)) {
+                            score += 5
+                        } else if (piece instanceof Bishop && row !== 0 && (col !== 2
+                            || col !== 5)) {
+                            score += 10
+                        }
+                        // castling
+                        if (piece instanceof King && col === 6) {
+                            score +=20
+                        } else if (piece instanceof King && col === 1) {
+                            score +=20 // better to shift king after castling
+                        }
+                        // double pawns bad for ai, but good if he doubles opponent's pawn
+                        if (piece instanceof Pawn && piece.colour === colour) {
+                            if (this.getPiece(row + 1, col) instanceof Pawn && piece.colour === colour) {
+                                score -= 2
+                            }
+                        } else if (piece instanceof Pawn && piece.colour !== colour) {
+                            if (this.getPiece(row - 1, col) instanceof Pawn && piece.colour !== colour) {
+                                score += 2
+                            }
+                        }
+                        // under check == bad, check opponent == good
+                        if (piece instanceof King && piece.colour === colour) {
+                            if (this.isCheck(colour, attacked)) {
+                                score -= 10
+                            }
+                        } else if (piece instanceof King && piece.colour === opponentColour) {
+                            if (this.isCheck(opponentColour, attacked)) {
+                                score += 10
+                            }
+                        }
+                    }
+                }
+            }
+            return score
+        }
 
         /**
          * used for minimax heuristics
@@ -416,9 +476,7 @@ const test = async (message) => {
          * @return {number} score of position
          */
         getScore = (colour) => {
-            let whiteScore = 0
-            let blackScore = 0
-            let materialScore = 0
+            let materialScore = 0 // material control
             const opponentColour = colour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
             for (let row = 0; row < 8; row ++) {
                 for (let col = 0; col < 8; col ++) {
@@ -431,8 +489,11 @@ const test = async (message) => {
                     }
                 }
             }
-            const attackScore = this.getAttackingSquares(opponentColour).length
-            return materialScore * 10 + attackScore * 0.1
+            const attackedSquares = this.getAttackingSquares(opponentColour)
+            const attackScore = attackedSquares[0].length // board control
+            const defenseScore = attackedSquares[1].length // defense
+            const positionalScore = this.scanSquaresScore(colour, attackedSquares[0], attackedSquares[1])
+            return materialScore * 100 + attackScore * 0.1 + positionalScore
         }
 
         getBoardString = () => {
@@ -643,7 +704,7 @@ const test = async (message) => {
          */
         getMoves = (board) => {
             const moves = []
-            const attacked = board.getAttackingSquares(this.colour)
+            const attacked = board.getAttackingSquares(this.colour)[0]
             for (const direction of this.directions) {
                 const row = direction[0]
                 const col = direction[1]

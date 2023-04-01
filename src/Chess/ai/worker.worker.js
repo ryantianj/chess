@@ -1,23 +1,20 @@
-
-
-
-// https://stackoverflow.com/questions/50901954/webworkers-dont-seem-to-be-working-in-production
-//https://medium.com/@danilog1905/how-to-use-web-workers-with-react-create-app-and-not-ejecting-in-the-attempt-3718d2a1166b
-// eslint-disable-next-line no-restricted-globals,no-undef
 const test = async (message) => {
+   // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
+    // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     // console.log("working")
     let nodes = 0
-    const ab =  (boardString, depth) => {
+    const ab =  (boardString, depth, moveString) => {
         try {
             nodes = 0
             const copyBoard = new Board()
             copyBoard.setBoardString(boardString)
             // const start = performance.now()
+            // const moves = moveString.map(x => Move.parseMove(copyBoard, x))
             const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
             // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
             // const end = performance.now()
             // console.log(nodes, end - start)
-            // console.log(result[1])
+            // console.log("Score", result[1])
             return result[0] // should be a move
         } catch (e) {
             alert("Engine error: " + e)
@@ -47,7 +44,8 @@ const test = async (message) => {
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer) => {
         // nodes++
         if (depth === 0) {
-            return [null, evaluate(board, maxPlayer)]
+            // return [null, evaluate(board, maxPlayer)]
+            return [null, currentPlayer * quiesce(alpha, beta, board, currentPlayer, 1)] // for even depth no need -1, for odd , -1
         }
         const testGameOver = board.isGameOver(currentPlayer)
         if (testGameOver.isGameOver && currentPlayer === maxPlayer) {
@@ -57,7 +55,7 @@ const test = async (message) => {
             return [null, Number.MAX_VALUE]
         }
         const moves = testGameOver.allMoves
-        moves.sort(sortMoves)
+        // moves.sort(sortMoves)
         const randomIndex = Math.floor(Math.random() * (moves.length - 1))
         let bestMove = moves.length > 0 ? moves[randomIndex] : null
 
@@ -94,6 +92,47 @@ const test = async (message) => {
             }
             return [bestMove, minEval]
         }
+    }
+
+    const sortMovesQuiesce = (a, b) => {
+        if (a.ate !== null && b.ate !== null) {
+            const aScore = a.piece.points - a.ate.points
+            const bScore = b.piece.points - b.ate.points
+            return aScore < bScore ? 1: -1
+        } else if (a.ate !== null) {
+            return -1
+        } else if (b.ate !== null) {
+            return 1
+        }
+        return 0
+    }
+
+    const quiesce = (alpha, beta, board, colour, depth) => {
+        const evaluation = evaluate(board, colour)
+        if (depth === 0) {
+            return evaluation
+        }
+        if (evaluation >= beta) {
+            return beta
+        }
+
+        alpha = Math.max(alpha, evaluation)
+        const moves = board.getAllMoves(colour)
+        moves.sort(sortMovesQuiesce)
+        for (const move of moves) {
+            if (move.ate !== null) {
+                board.movePiece(move.piece, move)
+                let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
+                board.undoMove()
+                if (score >= beta) {
+                    return beta
+                }
+                if (score > alpha) {
+                    alpha = score
+                }
+            }
+        }
+        return alpha
     }
 
     const negaMax = (depth, board, colour, maxColour) => {
@@ -156,6 +195,10 @@ const test = async (message) => {
                 [new Rook(Piece.WHITE, new Cell(7,0)), new Knight(Piece.WHITE, new Cell(7, 1)), new Bishop(Piece.WHITE, new Cell(7, 2)), new Queen(Piece.WHITE, new Cell(7, 3)), new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new Knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
             ]
             return startingBoard
+        }
+
+        deepCopyBoard = () => {
+
         }
 
         setBoardString = (boardString) => {
@@ -369,8 +412,6 @@ const test = async (message) => {
         }
 
         canCastle = (colour, side, attacked) => {
-            // console.log(this.castlingSquaresIsEmpty(colour, side) , !this.castlingSquaresUnderAttack(colour, side, attacked)
-            //     , !this.rookHasMoved(colour, side) , !this.kingHasMoved(colour))
             return this.castlingSquaresIsEmpty(colour, side) && !this.castlingSquaresUnderAttack(colour, side, attacked)
                 && !this.rookHasMoved(colour, side) && !this.kingHasMoved(colour)
         }
@@ -552,7 +593,8 @@ const test = async (message) => {
                 }
             }
             const total = score + materialScore * 1000
-            // if (total >= 1150 && this.board[3][4] instanceof Pawn) {
+            // if (this.board[3][4] instanceof Pawn && this.board[3][4].colour === Piece.WHITE
+            // && this.board) {
             //     console.log(this.board)
             // }
             return total
@@ -678,6 +720,28 @@ const test = async (message) => {
                 ate: this.ate !== null ? this.ate.getString() : null,
                 isPromotion: this.isPromotion
             }
+        }
+        static parseMove = (board, data) => {
+            const parseMove = new Move(
+                new Cell(data.oldCellRow, data.oldCellCol),
+                new Cell(data.newCellRow, data.newCellCol),
+                board.getPiece(data.oldCellRow, data.oldCellCol),
+                data.isEnPassant,
+                {isCastle: false}, // TODO : handle
+                null,
+                data.isPromotion
+            )
+            if (data.isPromotion) {
+                board.promotePiece(new Queen(board.getPiece(data.oldCellRow, data.oldCellCol).colour,
+                    board.getPiece(data.oldCellRow, data.oldCellCol).cell))
+            }
+            if (data.castle.isCastle) {
+                const rookObj = data.castle.rook
+                parseMove.castle.isCastle = true
+                parseMove.castle.rook = new Move(new Cell(rookObj.oldCellRow, rookObj.oldCellCol)
+                    , new Cell(rookObj.newCellRow, rookObj.newCellCol), board.getPiece(rookObj.oldCellRow, rookObj.oldCellCol))
+            }
+            return parseMove
         }
 
     }
@@ -978,7 +1042,7 @@ const test = async (message) => {
             newRow = this.cell.row + 1 * this.colour
             newCol = this.cell.col + 1
             if (board.canEat(newRow, newCol, this.colour)) {
-                const move = new Move(this.cell, new Cell(newRow, newCol), this , undefined, undefined, undefined,
+                const move = new Move(this.cell, new Cell(newRow, newCol), this , undefined, undefined, board.getPiece(newRow, newCol),
                     newRow === 0 || newRow === 7)
                 if (!board.willCheck(this, move)) {
                     moves.push(move)
@@ -999,7 +1063,7 @@ const test = async (message) => {
             newRow = this.cell.row + 1 * this.colour
             newCol = this.cell.col - 1
             if (board.canEat(newRow, newCol, this.colour)) {
-                const move = new Move(this.cell, new Cell(newRow, newCol), this , undefined, undefined, undefined,
+                const move = new Move(this.cell, new Cell(newRow, newCol), this , undefined, undefined, board.getPiece(newRow, newCol),
                     newRow === 0 || newRow === 7)
                 if (!board.willCheck(this, move)) {
                     moves.push(move)
@@ -1237,7 +1301,8 @@ const test = async (message) => {
 
 
     const data = message.data
-    const nextMove = ab(data[0], data[1])
+    const nextMove = ab(data[0], data[1], data[2])
+
     postMessage(nextMove.getMoveString())
 }
 // eslint-disable-next-line no-restricted-globals,no-undef

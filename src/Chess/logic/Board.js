@@ -19,6 +19,17 @@ const org = [
     [new Rook(Piece.WHITE, new Cell(7,0)), new knight(Piece.WHITE, new Cell(7, 1)), new Bishop(Piece.WHITE, new Cell(7, 2)), new Queen(Piece.WHITE, new Cell(7, 3)), new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
 ]
 
+const testCase = [
+    [new Rook(Piece.WHITE, new Cell(0,0)), new Bishop(Piece.BLACK, new Cell(0, 1)), null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, new Queen(Piece.BLACK, new Cell(2,3)), null, new King(Piece.BLACK, new Cell(2,5)), null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, new Pawn(Piece.WHITE, new Cell(4,4)), null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, new Rook(Piece.WHITE, new Cell(6,4)), null, null, null],
+    [null, null, null, null, new Rook(Piece.WHITE, new Cell(7,4)), null, null, new King(Piece.WHITE, new Cell(7,7))]
+]
+
 class Board {
     #board;
 

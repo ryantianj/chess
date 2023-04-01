@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from "react";
 import Game from "./logic/Game";
 import Piece from "./logic/Piece";
-import WorkerBuilder from "./ai/worker-builder";
 import Worker from "./ai/worker.worker";
 import Move from "./logic/Move";
 import Cell from "./logic/Cell";
@@ -121,7 +120,8 @@ export const ChessContextProvider = (props) => {
         if (game.turnColour === Piece.BLACK) {
             if (ai) {
                 // console.log("calling worker", game.board.getBoardString())
-                myWorker.postMessage([game.board.getBoardString(), 3])
+                const moveString = game.board.moves.map(x => Move.getMoveString(x))
+                myWorker.postMessage([game.board.getBoardString(), 3, moveString])
             }
         }
     }
@@ -156,27 +156,8 @@ export const ChessContextProvider = (props) => {
             }
             if (message) {
                 const data = message.data
-                const parseMove = new Move(
-                    new Cell(data.oldCellRow, data.oldCellCol),
-                    new Cell(data.newCellRow, data.newCellCol),
-                    game.board.getPiece(data.oldCellRow, data.oldCellCol),
-                    data.isEnPassant,
-                    {isCastle: false}, // TODO : handle
-                    game.board.getPiece(data.newCellRow, data.newCellCol),
-                    data.isPromotion
-                    )
-                if (data.isPromotion) {
-                    game.board.promotePiece(new Queen(game.board.getPiece(data.oldCellRow, data.oldCellCol).colour,
-                        game.board.getPiece(data.oldCellRow, data.oldCellCol).cell))
-                }
-                if (data.castle.isCastle) {
-                    const rookObj = data.castle.rook
-                    parseMove.castle.isCastle = true
-                    parseMove.castle.rook = new Move(new Cell(rookObj.oldCellRow, rookObj.oldCellCol)
-                        , new Cell(rookObj.newCellRow, rookObj.newCellCol), game.board.getPiece(rookObj.oldCellRow, rookObj.oldCellCol))
-                }
+                const parseMove = Move.parseMove(game, data)
                 engineMove(parseMove)
-
             }
         }
     }, [engineMove, game.board])

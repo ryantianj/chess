@@ -8,15 +8,21 @@ const test = async (message) => {
     // console.log("working")
     let nodes = 0
     const ab =  (boardString, depth) => {
-        nodes = 0
-        const copyBoard = new Board()
-        copyBoard.setBoardString(boardString)
-        // const start = performance.now()
-        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
-        // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        // const end = performance.now()
-        // console.log(nodes, end - start)
-        return result[0] // should be a move
+        try {
+            nodes = 0
+            const copyBoard = new Board()
+            copyBoard.setBoardString(boardString)
+            // const start = performance.now()
+            const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
+            // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
+            // const end = performance.now()
+            // console.log(nodes, end - start)
+            // console.log(result[1])
+            return result[0] // should be a move
+        } catch (e) {
+            alert("Engine error: " + e)
+        }
+
     }
 
     const evaluate = (board, colour) => { // TODO: improve heursitics, engine elo determined here
@@ -451,11 +457,11 @@ const test = async (message) => {
             const underCheck = this.isCheck(colour)
             const player = colour === Piece.BLACK ? "White" : "Black"
             if (underCheck && allMoves.length <= 0) {
-                return {isGameOver: true, message: player + " wins by checkmate"}
+                return {isGameOver: true, message: player + " wins by checkmate", allMoves: allMoves}
             } else if (!underCheck && allMoves.length <= 0) {
-                return {isGameOver: false, message: "Draw by stalemate"}
+                return {isGameOver: false, message: "Draw by stalemate", allMoves: allMoves}
             } else if (this.isRepeatPosition(8)) {
-                return {isGameOver: false, message: "Draw by threefold repetition"}
+                return {isGameOver: false, message: "Draw by threefold repetition",allMoves: allMoves}
             }
             return {isGameOver: false, message: "", allMoves: allMoves}
         }
@@ -534,7 +540,7 @@ const test = async (message) => {
                         // under check == bad, check opponent == good
                         if (piece instanceof King && piece.colour === colour) {
                             if (this.isCheck(colour, attacked)) {
-                                score -= 10
+                                score -= 5
                             }
                         }
                         // else if (piece instanceof King && piece.colour === opponentColour) {
@@ -545,7 +551,11 @@ const test = async (message) => {
                     }
                 }
             }
-            return score + materialScore * 500
+            const total = score + materialScore * 1000
+            // if (total >= 1150 && this.board[3][4] instanceof Pawn) {
+            //     console.log(this.board)
+            // }
+            return total
         }
 
         /**

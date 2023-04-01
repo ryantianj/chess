@@ -17,20 +17,27 @@ const switchColour = (colour) => {
     return colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
 }
 
-const miniMax = async (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
+const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer) => {
     nodes+=1
-    if (depth === 0 || board.isGameOver(currentPlayer).isGameOver) {
+    if (depth === 0) {
         return [null, evaluate(board, maxPlayer)]
+    }
+    const testGameOver = board.isGameOver(currentPlayer).isGameOver
+    if (testGameOver && currentPlayer === maxPlayer) {
+        return [null, -Number.MAX_VALUE]
+    }
+    if (testGameOver && currentPlayer !== maxPlayer) {
+        return [null, Number.MAX_VALUE]
     }
     const moves = board.getAllMoves(currentPlayer)
     const randomIndex = Math.floor(Math.random() * (moves.length - 1))
     let bestMove = moves.length > 0 ? moves[randomIndex] : null
 
-    if (currentPlayer === maxPlayer) {
+    if (isMax){
         let maxEval = -Number.MAX_VALUE
         for (const move of moves) {
             board.movePiece(move.piece, move)
-            const currentEval = miniMax(board, depth - 1, alpha, beta, maxPlayer, switchColour(currentPlayer))[1]
+            const currentEval = miniMax(board, depth - 1, alpha, beta, false, maxPlayer, switchColour(currentPlayer))[1]
             board.undoMove()
             if (currentEval > maxEval) {
                 maxEval = currentEval
@@ -43,10 +50,10 @@ const miniMax = async (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
         }
         return [bestMove, maxEval]
     } else {
-        let minEval = -Number.MAX_VALUE
+        let minEval = Number.MAX_VALUE
         for (const move of moves) {
             board.movePiece(move.piece, move)
-            const currentEval = miniMax(board, depth - 1, alpha, beta, maxPlayer, switchColour(currentPlayer))[1]
+            const currentEval = miniMax(board, depth - 1, alpha, beta, true, maxPlayer, switchColour(currentPlayer))[1]
             board.undoMove()
             if (currentEval < minEval) {
                 minEval = currentEval

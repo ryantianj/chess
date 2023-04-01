@@ -11,10 +11,11 @@ const test = async (message) => {
         nodes = 0
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        const start = performance.now()
+        // const start = performance.now()
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
-        const end = performance.now()
-        console.log(nodes, end - start)
+        // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
+        // const end = performance.now()
+        // console.log(nodes, end - start)
         return result[0] // should be a move
     }
 
@@ -26,18 +27,31 @@ const test = async (message) => {
         return colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
     }
 
+    const sortMoves = (a, b) => {
+        if (a.ate !== null && b.ate !== null) {
+            return b.ate.points - a.ate.points
+        } else if (a.ate !== null) {
+            return -1
+        } else if (b.ate !== null) {
+            return 1
+        }
+        return 0
+    }
+
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer) => {
-        nodes+=1
+        // nodes++
         if (depth === 0) {
             return [null, evaluate(board, maxPlayer)]
         }
-        if (board.isGameOver(currentPlayer).isGameOver && currentPlayer === maxPlayer) {
+        const testGameOver = board.isGameOver(currentPlayer)
+        if (testGameOver.isGameOver && currentPlayer === maxPlayer) {
             return [null, -Number.MAX_VALUE]
         }
-        if (board.isGameOver(currentPlayer).isGameOver && currentPlayer !== maxPlayer) {
+        if (testGameOver.isGameOver && currentPlayer !== maxPlayer) {
             return [null, Number.MAX_VALUE]
         }
-        const moves = board.getAllMoves(currentPlayer)
+        const moves = testGameOver.allMoves
+        moves.sort(sortMoves)
         const randomIndex = Math.floor(Math.random() * (moves.length - 1))
         let bestMove = moves.length > 0 ? moves[randomIndex] : null
 
@@ -74,6 +88,47 @@ const test = async (message) => {
             }
             return [bestMove, minEval]
         }
+    }
+
+    const negaMax = (depth, board, colour, maxColour) => {
+        if (depth === 0) {
+            return evaluate(board, maxColour)
+        }
+        const testGameOver = board.isGameOver(colour).isGameOver
+        if (testGameOver && colour === maxColour) {
+            return -Number.MAX_VALUE
+        }
+        if (testGameOver && colour !== maxColour) {
+            return Number.MAX_VALUE
+        }
+        let max = -Number.MAX_VALUE
+        const moves = board.getAllMoves(colour)
+        for (const move of moves) {
+            board.movePiece(move.piece, move)
+            const currentEval = -negaMax(depth - 1, board, switchColour(colour), maxColour)
+            if (currentEval > max) {
+                max = currentEval
+            }
+            board.undoMove()
+        }
+        return max
+    }
+    const rootNegaMax = (depth, board, colour, maxColour) => {
+        const rootMoves = board.getAllMoves(maxColour)
+        let max = -Number.MAX_VALUE
+        const randomIndex = Math.floor(Math.random() * (rootMoves.length - 1))
+        let bestMove = rootMoves.length > 0 ? rootMoves[randomIndex] : null
+        for (const move of rootMoves) {
+            board.movePiece(move.piece, move)
+            const score = negaMax(depth, board, colour, maxColour)
+            if (score > max) {
+                max = score
+                bestMove = move
+            }
+            board.undoMove()
+        }
+        return bestMove
+
     }
     class Board {
         board;
@@ -402,7 +457,7 @@ const test = async (message) => {
             } else if (this.isRepeatPosition(8)) {
                 return {isGameOver: false, message: "Draw by threefold repetition"}
             }
-            return {isGameOver: false, message: ""}
+            return {isGameOver: false, message: "", allMoves: allMoves}
         }
 
         getAllMoves = (colour) => {
@@ -424,10 +479,17 @@ const test = async (message) => {
         scanSquaresScore = (colour, attacked, defence) => {
             const opponentColour = colour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
             let score = 0
+            let materialScore = 0
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const piece = this.getPiece(row, col)
                     if (piece !== null) {
+                        if (piece.colour === colour) {
+                            materialScore += piece.points
+                        }
+                        if (piece.colour !== colour) {
+                            materialScore -= piece.points
+                        }
                         // const moves = piece.getMoves(this)
                         // //board control
                         // score += moves.length
@@ -456,7 +518,7 @@ const test = async (message) => {
                             score += 10
                         }
                         // castling
-                        if (piece instanceof King && col !== 4) {
+                        if (piece instanceof King && (col === 2 || col === 6)) {
                             score +=20
                         }
                         // double pawns bad for ai, but good if he doubles opponent's pawn
@@ -483,7 +545,7 @@ const test = async (message) => {
                     }
                 }
             }
-            return score
+            return score + materialScore * 500
         }
 
         /**
@@ -492,24 +554,24 @@ const test = async (message) => {
          * @return {number} score of position
          */
         getScore = (colour) => {
-            let materialScore = 0 // material control
             const opponentColour = colour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
-            for (let row = 0; row < 8; row ++) {
-                for (let col = 0; col < 8; col ++) {
-                    const piece = this.board[row][col]
-                    if (piece instanceof Piece && piece.colour === colour) {
-                        materialScore += piece.points
-                    }
-                    if (piece instanceof Piece && piece.colour !== colour) {
-                        materialScore -= piece.points
-                    }
-                }
-            }
+            // let materialScore = 0 // material control
+            // for (let row = 0; row < 8; row ++) {
+            //     for (let col = 0; col < 8; col ++) {
+            //         const piece = this.board[row][col]
+            //         if (piece instanceof Piece && piece.colour === colour) {
+            //             materialScore += piece.points
+            //         }
+            //         if (piece instanceof Piece && piece.colour !== colour) {
+            //             materialScore -= piece.points
+            //         }
+            //     }
+            // }
             const attackedSquares = this.getAttackingSquares(opponentColour)
             const attackScore = attackedSquares[0].length // board control
             const defenseScore = attackedSquares[1].length // defense
             const positionalScore = this.scanSquaresScore(colour, attackedSquares[0], attackedSquares[1])
-            return materialScore * 500 + attackScore + positionalScore
+            return attackScore + positionalScore
         }
 
         getBoardString = () => {

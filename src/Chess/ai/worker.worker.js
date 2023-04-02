@@ -8,13 +8,14 @@ const test = async (message) => {
             nodes = 0
             const copyBoard = new Board()
             copyBoard.setBoardString(boardString)
-            // const start = performance.now()
-            // const moves = moveString.map(x => Move.parseMove(copyBoard, x))
+            const start = performance.now()
+            const moves = moveString.map(x => Move.parseMove(copyBoard, x))
+            copyBoard.moves = moves
             const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
             // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-            // const end = performance.now()
-            // console.log(nodes, end - start)
-            // console.log("Score", result[1])
+            const end = performance.now()
+            console.log(nodes, end - start)
+            console.log("Score", result[1])
             return result[0] // should be a move
         } catch (e) {
             alert("Engine error: " + e)
@@ -44,8 +45,9 @@ const test = async (message) => {
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer) => {
         // nodes++
         if (depth === 0) {
-            // return [null, evaluate(board, maxPlayer)]
-            return [null, currentPlayer * quiesce(alpha, beta, board, currentPlayer, 1)] // for even depth no need -1, for odd , -1
+            const result = currentPlayer * quiesce(alpha, beta, board, currentPlayer, 1)
+
+            return [null, result] // for even depth no need -1, for odd , -1
         }
         const testGameOver = board.isGameOver(currentPlayer)
         if (testGameOver.isGameOver && currentPlayer === maxPlayer) {
@@ -55,7 +57,7 @@ const test = async (message) => {
             return [null, Number.MAX_VALUE]
         }
         const moves = testGameOver.allMoves
-        // moves.sort(sortMoves)
+        moves.sort(sortMovesQuiesce)
         const randomIndex = Math.floor(Math.random() * (moves.length - 1))
         let bestMove = moves.length > 0 ? moves[randomIndex] : null
 
@@ -108,7 +110,7 @@ const test = async (message) => {
     }
 
     const quiesce = (alpha, beta, board, colour, depth) => {
-        const evaluation = evaluate(board, colour)
+        const evaluation = evaluate(board, Piece.BLACK)
         if (depth === 0) {
             return evaluation
         }
@@ -120,7 +122,7 @@ const test = async (message) => {
         const moves = board.getAllMoves(colour)
         moves.sort(sortMovesQuiesce)
         for (const move of moves) {
-            if (move.ate !== null) {
+            if (move.ate !== null && move.ate.points > move.piece.points) {
                 board.movePiece(move.piece, move)
                 let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
                 board.undoMove()
@@ -553,19 +555,36 @@ const test = async (message) => {
 
                         // development
                         if (piece instanceof Pawn && row !== 1) {
-                            score += 3
+                            if (piece.colour === colour) {
+                                score += 3
+                            } else {
+                                score -=3
+                            }
+
                         } else if (piece instanceof Knight && row !== 0 && (col !== 1
                             || col !== 6)) {
-                            score += 10
+                            if (piece.colour === colour) {
+                                score += 10
+                            } else {
+                                score -= 10
+                            }
                         } else if (piece instanceof Rook && row !== 0 && (col !== 0
                             || col !== 7)) {
-                            score += 5
+                            if (piece.colour === colour) {
+                                score += 5
+                            } else {
+                                score -= 5
+                            }
                         } else if (piece instanceof Bishop && row !== 0 && (col !== 2
                             || col !== 5)) {
-                            score += 10
+                            if (piece.colour === colour) {
+                                score += 10
+                            } else {
+                                score -= 10
+                            }
                         }
                         // castling
-                        if (piece instanceof King && (col === 2 || col === 6)) {
+                        if (piece instanceof King && (col === 2 || col === 6) && colour === piece.colour) {
                             score +=20
                         }
                         // double pawns bad for ai, but good if he doubles opponent's pawn
@@ -581,7 +600,7 @@ const test = async (message) => {
                         // under check == bad, check opponent == good
                         if (piece instanceof King && piece.colour === colour) {
                             if (this.isCheck(colour, attacked)) {
-                                score -= 5
+                                score -= 10
                             }
                         }
                         // else if (piece instanceof King && piece.colour === opponentColour) {

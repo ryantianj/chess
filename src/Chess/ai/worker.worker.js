@@ -82,7 +82,7 @@ const test = async (message) => {
                     minEval = currentEval
                     bestMove = move
                 }
-                beta = Math.max(beta, currentEval)
+                beta = Math.min(beta, currentEval)
                 if (beta <= alpha) {
                     break
                 }

@@ -1,12 +1,13 @@
-let moves = 0
+let totalMoves = 0
+let mem = new Map()
 const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     // console.log("working")
     let nodes = 0
-    const mem = new Map()
-    console.log("mem", mem.size, moves)
-    moves++
+    mem = new Map()
+    console.log("mem", mem.size)
+    totalMoves++
     const ab =  (boardString, depth, moveString) => {
         nodes = 0
         const copyBoard = new Board()
@@ -17,7 +18,7 @@ const test = async (message) => {
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
         const end = performance.now()
-        console.log(nodes, end - start)
+        console.log(nodes, end - start, totalMoves)
         console.log("Score", result[1])
         return result[0] // should be a move
     }
@@ -32,11 +33,13 @@ const test = async (message) => {
 
     const sortMoves = (a, b) => {
         if (a.ate !== null && b.ate !== null) {
-            return b.ate.points - a.ate.points
+            const aScore = a.piece.points - a.ate.points
+            const bScore = b.piece.points - b.ate.points
+            return aScore < bScore ? 1: -1
         } else if (a.ate !== null) {
-            return -1
-        } else if (b.ate !== null) {
             return 1
+        } else if (b.ate !== null) {
+            return -1
         }
         return 0
     }
@@ -521,12 +524,9 @@ const test = async (message) => {
          */
         isGameOver = (colour) => {
             const allMoves = this.getAllMoves(colour)
-            const underCheck = this.isCheck(colour)
             const player = colour === Piece.BLACK ? "White" : "Black"
-            if (underCheck && allMoves.length <= 0) {
+            if (allMoves.length <= 0) {
                 return {isGameOver: true, message: player + " wins by checkmate", allMoves: allMoves}
-            } else if (!underCheck && allMoves.length <= 0) {
-                return {isGameOver: false, message: "Draw by stalemate", allMoves: allMoves}
             } else if (this.isRepeatPosition(8)) {
                 return {isGameOver: false, message: "Draw by threefold repetition",allMoves: allMoves}
             }

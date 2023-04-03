@@ -22,9 +22,13 @@ class Game {
      */
     getEatenPieces = (colour) => {
         const moves = this.board.moves
-        return moves.filter(move => {
+        const filtered =  moves.filter(move => {
             return move.ate !== null && move.ate.colour !== colour
         }).map(x => x.ate)
+            filtered.sort((a, b) => {
+                return a.points - b.points
+            })
+        return filtered
     }
 
     undoMove = () => {

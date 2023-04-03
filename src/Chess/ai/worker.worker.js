@@ -1,8 +1,12 @@
+let moves = 0
 const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     // console.log("working")
     let nodes = 0
+    const mem = new Map()
+    console.log("mem", mem.size, moves)
+    moves++
     const ab =  (boardString, depth, moveString) => {
         nodes = 0
         const copyBoard = new Board()
@@ -40,9 +44,10 @@ const test = async (message) => {
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer) => {
         // nodes++
         if (depth === 0) {
-            // const result = currentPlayer * quiesce(alpha, beta, board, currentPlayer, 0)
+            // const result = evaluate(board, maxPlayer)
+            const result = maxPlayer * -1 * quiesce(alpha, beta, board, currentPlayer, 1)
 
-            return [null, evaluate(board, maxPlayer)] // for even depth no need -1, for odd , -1
+            return [null, result] // for even depth no need -1, for odd , -1
         }
         const testGameOver = board.isGameOver(currentPlayer)
         if (testGameOver.isGameOver && currentPlayer === maxPlayer) {
@@ -105,7 +110,17 @@ const test = async (message) => {
     }
 
     const quiesce = (alpha, beta, board, colour, depth) => {
-        const evaluation = evaluate(board, Piece.BLACK)
+        // const evaluation = evaluate(board, colour)
+        let evaluation
+        const boardHash = board.getBoardHash() + colour.toString() + depth.toString()
+        if (mem.get(boardHash) !== undefined) {
+            nodes++
+            evaluation = mem.get(boardHash)
+        } else {
+            evaluation = evaluate(board, colour)
+            mem.set(boardHash, evaluation)
+        }
+
         if (depth === 0) {
             return evaluation
         }
@@ -230,6 +245,20 @@ const test = async (message) => {
                 newBoard.push(newRow)
             }
             this.board = newBoard
+        }
+
+        getBoardHash = () => {
+            let str = ""
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (!this.isEmpty(row, col)) {
+                        str += this.getPiece(row, col).getString()
+                    } else {
+                        str += " "
+                    }
+                }
+            }
+            return str
         }
 
         clonePiece = (piece) => {
@@ -520,18 +549,16 @@ const test = async (message) => {
         /**
          * Goes through board for positional eval, like piece development, hardcoded for black
          */
-        scanSquaresScore = (colour, attacked, defence) => {
-            const opponentColour = colour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
+        scanSquaresScore = (colour) => {
             let score = 0
             let materialScore = 0
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const piece = this.getPiece(row, col)
                     if (piece !== null) {
-                        if (piece.colour === colour) {
+                        if (piece.colour === Piece.WHITE) {
                             materialScore += piece.points
-                        }
-                        if (piece.colour !== colour) {
+                        } else {
                             materialScore -= piece.points
                         }
                         // const moves = piece.getMoves(this)
@@ -548,56 +575,29 @@ const test = async (message) => {
                         //     score += (moves.length * 5)
                         // }
 
-                        // development
-                        if (piece.name === Piece.PAWN && row !== 1) {
-                            if (piece.colour === colour) {
-                                score += 3
-                            } else {
-                                score -=3
-                            }
+                        // development / positional score
+                        if (piece.colour === Piece.WHITE) {
+                            score += piece.whiteScore[row][col]
+                        } else {
+                            score -= piece.blackScore[row][col]
+                        }
 
-                        } else if (piece.name === Piece.KNIGHT && row !== 0 && (col !== 1
-                            || col !== 6)) {
-                            if (piece.colour === colour) {
-                                score += 10
-                            } else {
-                                score -= 10
-                            }
-                        } else if (piece.name === Piece.ROOK && row !== 0 && (col !== 0
-                            || col !== 7)) {
-                            if (piece.colour === colour) {
-                                score += 5
-                            } else {
-                                score -= 5
-                            }
-                        } else if (piece.name === Piece.BISHOP && row !== 0 && (col !== 2
-                            || col !== 5)) {
-                            if (piece.colour === colour) {
-                                score += 10
-                            } else {
-                                score -= 10
-                            }
-                        }
-                        // castling
-                        if (piece.name === Piece.KING && (col === 2 || col === 6) && colour === piece.colour) {
-                            score +=20
-                        }
                         // double pawns bad for ai, but good if he doubles opponent's pawn
-                        if (piece.name === Piece.PAWN && piece.colour === colour) {
-                            if (!this.isEmpty(row + 1, col) && this.getPiece(row + 1, col).name === Piece.PAWN && piece.colour === colour) {
+                        if (piece.name === Piece.PAWN && piece.colour === Piece.WHITE) {
+                            if (!this.isEmpty(row + 1, col) && this.getPiece(row + 1, col).name === Piece.PAWN && piece.colour === Piece.WHITE) {
                                 score -= 20
                             }
-                        } else if (piece.name === Piece.PAWN && piece.colour !== colour) {
-                            if (!this.isEmpty(row - 1, col) && this.getPiece(row - 1, col).name === Piece.PAWN && piece.colour !== colour) {
+                        } else if (piece.name === Piece.PAWN && piece.colour !== Piece.WHITE) {
+                            if (!this.isEmpty(row - 1, col) && this.getPiece(row - 1, col).name === Piece.PAWN && piece.colour !== Piece.WHITE) {
                                 score += 20
                             }
                         }
                         // under check == bad, check opponent == good
-                        if (piece.name === Piece.KING && piece.colour === colour) {
-                            if (this.isCheck(colour, attacked)) {
-                                score -= 10
-                            }
-                        }
+                        // if (piece.name === Piece.KING && piece.colour === colour) {
+                        //     if (this.isCheck(colour, attacked)) {
+                        //         score -= 10
+                        //     }
+                        // }
                         // else if (piece instanceof King && piece.colour === opponentColour) {
                         //     if (this.isCheck(opponentColour, attacked)) {
                         //         score += 10
@@ -606,7 +606,7 @@ const test = async (message) => {
                     }
                 }
             }
-            const total = score + materialScore * 1000
+            const total = score + materialScore
             // if (this.board[3][4] instanceof Pawn && this.board[3][4].colour === Piece.WHITE
             // && this.board) {
             //     console.log(this.board)
@@ -633,11 +633,11 @@ const test = async (message) => {
             //         }
             //     }
             // }
-            const attackedSquares = this.getAttackingSquares(opponentColour)
-            const attackScore = attackedSquares[0].length // board control
-            const defenseScore = attackedSquares[1].length // defense
-            const positionalScore = this.scanSquaresScore(colour, attackedSquares[0], attackedSquares[1])
-            return attackScore + positionalScore
+            // const attackedSquares = this.getAttackingSquares(opponentColour) // heavy operation
+            // const attackScore = attackedSquares[0].length // board control
+            // const defenseScore = attackedSquares[1].length // defense
+            const positionalScore = this.scanSquaresScore(colour)
+            return (positionalScore) * colour * -1
         }
 
         getBoardString = () => {
@@ -803,8 +803,28 @@ const test = async (message) => {
     }
     class Bishop extends Piece {
         directions = [[1,1], [-1,-1], [1,-1],[-1,1]]
-        points = 3
+        points = 330
         name = Piece.BISHOP
+        whiteScore = [
+            [-20,-10,-10,-10,-10,-10,-10,-20],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-10,  0,  5, 10, 10,  5,  0,-10],
+            [-10,  5,  5, 10, 10,  5,  5,-10],
+            [-10,  0, 10, 10, 10, 10,  0,-10],
+            [-10, 10, 10, 10, 10, 10, 10,-10],
+            [-10,  5,  0,  0,  0,  0,  5,-10],
+            [-20,-10,-10,-10,-10,-10,-10,-20]
+        ]
+        blackScore = [
+            [-20,-10,-10,-10,-10,-10,-10,-20],
+            [-10,  5,  0,  0,  0,  0,  5,-10],
+            [-10, 10, 10, 10, 10, 10, 10,-10],
+            [-10,  0, 10, 10, 10, 10,  0,-10],
+            [-10,  5,  5, 10, 10,  5,  5,-10],
+            [-10,  0,  5, 10, 10,  5,  0,-10],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-20,-10,-10,-10,-10,-10,-10,-20],
+        ]
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
         }
@@ -886,7 +906,29 @@ const test = async (message) => {
         static KING_SIDE = 'king'
         static QUEEN_SIDE = 'queen'
         name = Piece.KING
-        points = 9999
+        points = 20000
+
+        whiteScore = [
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-20,-30,-30,-40,-40,-30,-30,-20],
+            [-10,-20,-20,-20,-20,-20,-20,-10],
+            [20, 20,  0,  0,  0,  0, 20, 20],
+            [20, 30, 10,  0,  0, 10, 30, 20]
+        ]
+
+        blackScore = [
+            [20, 30, 10,  0,  0, 10, 30, 20],
+            [20, 20,  0,  0,  0,  0, 20, 20],
+            [-10,-20,-20,-20,-20,-20,-20,-10],
+            [-20,-30,-30,-40,-40,-30,-30,-20],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+        ]
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 
@@ -975,8 +1017,30 @@ const test = async (message) => {
     class Knight extends Piece {
         directions = [[1, 2], [1, -2], [2, 1], [2, -1], [-1, 2], [-1, -2], [-2, 1], [-2, -1]]
 
-        points = 3
+        points = 320
         name = Piece.KNIGHT
+
+        whiteScore = [
+            [-50,-40,-30,-30,-30,-30,-40,-50],
+            [-40,-20,  0,  0,  0,  0,-20,-40],
+            [-30,  0, 10, 15, 15, 10,  0,-30],
+            [-30,  5, 15, 20, 20, 15,  5,-30],
+            [-30,  0, 15, 20, 20, 15,  0,-30],
+            [-30,  5, 10, 15, 15, 10,  5,-30],
+            [-40,-20,  0,  5,  5,  0,-20,-40],
+            [-50,-40,-30,-30,-30,-30,-40,-50]
+        ]
+
+        blackScore = [
+            [-50,-40,-30,-30,-30,-30,-40,-50],
+            [-40,-20,  0,  5,  5,  0,-20,-40],
+            [-30,  5, 10, 15, 15, 10,  5,-30],
+            [-30,  0, 15, 20, 20, 15,  0,-30],
+            [-30,  5, 15, 20, 20, 15,  5,-30],
+            [-30,  0, 10, 15, 15, 10,  0,-30],
+            [-40,-20,  0,  0,  0,  0,-20,-40],
+            [-50,-40,-30,-30,-30,-30,-40,-50],
+        ]
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 
@@ -1045,8 +1109,29 @@ const test = async (message) => {
         }
     }
     class Pawn extends Piece {
-        points = 1
+        points = 100
         name = Piece.PAWN
+
+        whiteScore = [
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [5,  5, 10, 25, 25, 10,  5,  5],
+            [0,  0,  0, 20, 20,  0,  0,  0],
+            [5, -5,-10,  0,  0,-10, -5,  5],
+            [5, 10, 10,-20,-20, 10, 10,  5],
+            [0,  0,  0,  0,  0,  0,  0,  0]
+        ]
+        blackScore = [
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [5, 10, 10,-40,-40, 10, 10,  5],
+            [5, -5,-10,  0,  0,-10, -5,  5],
+            [0,  0,  0, 20, 20,  0,  0,  0],
+            [5,  5, 10, 25, 25, 10,  5,  5],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [0,  0,  0,  0,  0,  0,  0,  0],
+        ]
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 
@@ -1182,8 +1267,29 @@ const test = async (message) => {
     }
     class Queen extends Piece {
         directions = [[1,1], [-1,-1], [1,-1],[-1,1], [0,1], [1,0], [0,-1],[-1,0]]
-        points = 9
+        points = 900
         name = Piece.QUEEN
+
+        whiteScore = [
+            [-20,-10,-10, -5, -5,-10,-10,-20],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-10,  0,  5,  5,  5,  5,  0,-10],
+            [-5,  0,  5,  5,  5,  5,  0, -5],
+            [0,  0,  5,  5,  5,  5,  0, -5],
+            [-10,  5,  5,  5,  5,  5,  0,-10],
+            [-10,  0,  5,  0,  0,  0,  0,-10],
+            [-20,-10,-10, -5, -5,-10,-10,-20]
+        ]
+        blackScore = [
+            [-20,-10,-10, -5, -5,-10,-10,-20],
+            [-10,  0,  5,  0,  0,  0,  0,-10],
+            [-10,  5,  5,  5,  5,  5,  0,-10],
+            [0,  0,  5,  5,  5,  5,  0, -5],
+            [-5,  0,  5,  5,  5,  5,  0, -5],
+            [-10,  0,  5,  5,  5,  5,  0,-10],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-20,-10,-10, -5, -5,-10,-10,-20],
+        ]
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 
@@ -1263,8 +1369,28 @@ const test = async (message) => {
     }
     class Rook extends Piece {
         directions = [[0,1], [1,0], [0,-1],[-1,0]]
-        points = 5
+        points = 500
         name = Piece.ROOK
+        whiteScore = [
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [5, 10, 10, 10, 10, 10, 10,  5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [0,  0,  0,  5,  5,  0,  0,  0]
+        ]
+        blackScore = [
+            [0,  0,  4,  5,  5,  4,  0,  0],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [-5,  0,  0,  0,  0,  0,  0, -5],
+            [5, 10, 10, 10, 10, 10, 10,  5],
+            [0,  0,  0,  0,  0,  0,  0,  0],
+        ]
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 

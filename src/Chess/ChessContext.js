@@ -156,7 +156,7 @@ export const ChessContextProvider = (props) => {
             }
             if (message) {
                 const data = message.data
-                if (data instanceof Error) {
+                if (data.isError) {
                     alert("Engine error: " + data.message)
                 } else {
                     const parseMove = Move.parseMove(game, data)

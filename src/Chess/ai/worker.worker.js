@@ -15,12 +15,11 @@ const test = async (message) => {
         nodes = 0
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        const start = performance.now()
-        const moves = moveString.map(x => Move.parseMove(copyBoard, x))
-        copyBoard.moves = moves
+        // const start = performance.now()
+        copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        const end = performance.now()
+        // const end = performance.now()
         // console.log(nodes, end - start, totalMoves)
         // console.log("Score", result[1])
         return result[0] // should be a move
@@ -746,11 +745,7 @@ const test = async (message) => {
                 null,
                 data.isPromotion
             )
-            if (data.isPromotion) {
-                console.log(board.board)
-                board.promotePiece(new Queen(board.getPiece(data.newCellRow, data.newCellCol).colour,
-                    board.getPiece(data.newCellRow, data.newCellCol).cell))
-            }
+
             if (data.castle.isCastle) {
                 const rookObj = data.castle.rook
                 parseMove.castle.isCastle = true
@@ -1473,11 +1468,15 @@ const test = async (message) => {
         }
     }
 
+        try {
+            const data = message.data
+            const nextMove = ab(data[0], data[1], data[2])
 
-        const data = message.data
-        const nextMove = ab(data[0], data[1], data[2])
+            postMessage(nextMove.getMoveString())
+        } catch (e) {
+            postMessage({isError: true, message:"Error: " + e})
+        }
 
-        postMessage(nextMove.getMoveString())
 
 
 

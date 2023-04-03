@@ -3,9 +3,12 @@ let mem = new Map()
 const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
+    //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
     // console.log("working")
     let nodes = 0
-    mem = new Map()
+    if (totalMoves % 2 === 0) {
+        mem = new Map()
+    }
     console.log("mem", mem.size)
     totalMoves++
     const ab =  (boardString, depth, moveString) => {
@@ -116,7 +119,7 @@ const test = async (message) => {
         // const evaluation = evaluate(board, colour)
         let evaluation
         const boardHash = board.getBoardHash() + colour.toString() + depth.toString()
-        if (mem.get(boardHash) !== undefined) {
+        if (mem.has(boardHash)) {
             nodes++
             evaluation = mem.get(boardHash)
         } else {
@@ -527,8 +530,6 @@ const test = async (message) => {
             const player = colour === Piece.BLACK ? "White" : "Black"
             if (allMoves.length <= 0) {
                 return {isGameOver: true, message: player + " wins by checkmate", allMoves: allMoves}
-            } else if (this.isRepeatPosition(8)) {
-                return {isGameOver: false, message: "Draw by threefold repetition",allMoves: allMoves}
             }
             return {isGameOver: false, message: "", allMoves: allMoves}
         }
@@ -746,8 +747,9 @@ const test = async (message) => {
                 data.isPromotion
             )
             if (data.isPromotion) {
-                board.promotePiece(new Queen(board.getPiece(data.oldCellRow, data.oldCellCol).colour,
-                    board.getPiece(data.oldCellRow, data.oldCellCol).cell))
+                console.log(board.board)
+                board.promotePiece(new Queen(board.getPiece(data.newCellRow, data.newCellCol).colour,
+                    board.getPiece(data.newCellRow, data.newCellCol).cell))
             }
             if (data.castle.isCastle) {
                 const rookObj = data.castle.rook
@@ -1125,7 +1127,7 @@ const test = async (message) => {
         blackScore = [
             [0,  0,  0,  0,  0,  0,  0,  0],
             [5, 10, 10,-40,-40, 10, 10,  5],
-            [5, -5,-10,  0,  0,-10, -5,  5],
+            [5, 10,20,  0,  0,-10, -5,  5],
             [0,  0,  0, 20, 20,  0,  0,  0],
             [5,  5, 10, 25, 25, 10,  5,  5],
             [10, 10, 20, 30, 30, 20, 10, 10],

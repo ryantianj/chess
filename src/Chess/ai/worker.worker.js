@@ -4,20 +4,19 @@ const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
-    // console.log("working")
     let nodes = 0
     if (totalMoves % 2 === 0) {
         mem = new Map()
     }
     // console.log("mem", mem.size)
     totalMoves++
-    const ab =  (boardString, depth, moveString) => {
+    const ab =  (boardString, depth, moveString, colour) => {
         nodes = 0
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
         // const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
-        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
+        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
         // const end = performance.now()
         // console.log(nodes, end - start, totalMoves)
@@ -50,7 +49,8 @@ const test = async (message) => {
         // nodes++
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
-            const result = maxPlayer * quiesce(alpha, beta, board, currentPlayer, 2) // TODO: for even calling depth no need -1, for odd , -1
+            const result = quiesce(alpha, beta, board, currentPlayer, 2)
+            // TODO: for even calling depth no need -1, for odd , -1
 
             return [null, result]
         }
@@ -1470,7 +1470,7 @@ const test = async (message) => {
 
         try {
             const data = message.data
-            const nextMove = ab(data[0], data[1], data[2])
+            const nextMove = ab(data[0], data[1], data[2], data[3])
 
             postMessage(nextMove.getMoveString())
         } catch (e) {

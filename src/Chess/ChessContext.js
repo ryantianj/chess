@@ -156,8 +156,12 @@ export const ChessContextProvider = (props) => {
             }
             if (message) {
                 const data = message.data
-                const parseMove = Move.parseMove(game, data)
-                engineMove(parseMove)
+                if (data instanceof Error) {
+                    alert("Engine error: " + data.message)
+                } else {
+                    const parseMove = Move.parseMove(game, data)
+                    engineMove(parseMove)
+                }
             }
         }
     }, [engineMove, game.board])

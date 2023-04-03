@@ -4,23 +4,18 @@ const test = async (message) => {
     // console.log("working")
     let nodes = 0
     const ab =  (boardString, depth, moveString) => {
-        try {
-            nodes = 0
-            const copyBoard = new Board()
-            copyBoard.setBoardString(boardString)
-            const start = performance.now()
-            const moves = moveString.map(x => Move.parseMove(copyBoard, x))
-            copyBoard.moves = moves
-            const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
-            // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-            const end = performance.now()
-            console.log(nodes, end - start)
-            console.log("Score", result[1])
-            return result[0] // should be a move
-        } catch (e) {
-            alert("Engine error: " + e)
-        }
-
+        nodes = 0
+        const copyBoard = new Board()
+        copyBoard.setBoardString(boardString)
+        const start = performance.now()
+        const moves = moveString.map(x => Move.parseMove(copyBoard, x))
+        copyBoard.moves = moves
+        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
+        // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
+        const end = performance.now()
+        console.log(nodes, end - start)
+        console.log("Score", result[1])
+        return result[0] // should be a move
     }
 
     const evaluate = (board, colour) => { // TODO: improve heursitics, engine elo determined here
@@ -45,9 +40,9 @@ const test = async (message) => {
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer) => {
         // nodes++
         if (depth === 0) {
-            const result = currentPlayer * quiesce(alpha, beta, board, currentPlayer, 1)
+            // const result = currentPlayer * quiesce(alpha, beta, board, currentPlayer, 0)
 
-            return [null, result] // for even depth no need -1, for odd , -1
+            return [null, evaluate(board, maxPlayer)] // for even depth no need -1, for odd , -1
         }
         const testGameOver = board.isGameOver(currentPlayer)
         if (testGameOver.isGameOver && currentPlayer === maxPlayer) {
@@ -301,7 +296,7 @@ const test = async (message) => {
                 const newRow = row + direction[0]
                 const newCol = col + direction[1]
                 if (!this.isOutSide(newRow, newCol) && !this.isEmpty(newRow, newCol)
-                    && (this.getPiece(newRow, newCol) instanceof King && this.getPiece(newRow, newCol).colour !== colour)) {
+                    && (this.getPiece(newRow, newCol).name === Piece.KING && this.getPiece(newRow, newCol).colour !== colour)) {
                     return false
                 }
             }
@@ -319,7 +314,7 @@ const test = async (message) => {
                 for (let col = 0; col < 8; col++) {
                     if (!this.isEmpty(row, col)) {
                         const getPc = this.getPiece(row, col)
-                        if (getPc.colour !== colour && !(getPc instanceof King)) {
+                        if (getPc.colour !== colour && !(getPc.name === Piece.KING)) {
                             const moves = getPc.getAttack(this)
                             squares.push.apply(squares, moves) // better performance
                         }
@@ -369,7 +364,7 @@ const test = async (message) => {
 
         kingHasMoved = (colour) => {
             for (const move of this.moves) {
-                if (move.piece instanceof King && move.piece.colour === colour) {
+                if (move.piece.name === Piece.KING && move.piece.colour === colour) {
                     return true
                 }
             }
@@ -379,11 +374,11 @@ const test = async (message) => {
         rookHasMoved = (colour, side) => {
             const row = colour === Piece.BLACK ? 0 : 7
             const col = side === King.KING_SIDE ? 7 : 0
-            if (!(this.getPiece(row, col) instanceof Rook)) { // no rook on cell
+            if (!(this.getPiece(row, col) !== null && this.getPiece(row, col).name === Piece.ROOK)) { // no rook on cell
                 return true
             }
             for (const move of this.moves) {
-                if (move.piece instanceof Rook && move.piece.colour === colour && move.oldCell.row === row && move.oldCell.col === col) {
+                if (move.piece.name === Piece.ROOK && move.piece.colour === colour && move.oldCell.row === row && move.oldCell.col === col) {
                     return true
                 }
             }
@@ -429,7 +424,7 @@ const test = async (message) => {
             const attacked = attackArray === null ? this.getAttackingSquares(colour)[0] : attackArray
             for (const move of attacked) {
                 const piece = this.getPiece(move.newCell.row, move.newCell.col)
-                if (piece instanceof King
+                if (piece !== null && piece.name === Piece.KING
                     && piece.colour === colour) {
                     return true
                 }
@@ -554,28 +549,28 @@ const test = async (message) => {
                         // }
 
                         // development
-                        if (piece instanceof Pawn && row !== 1) {
+                        if (piece.name === Piece.PAWN && row !== 1) {
                             if (piece.colour === colour) {
                                 score += 3
                             } else {
                                 score -=3
                             }
 
-                        } else if (piece instanceof Knight && row !== 0 && (col !== 1
+                        } else if (piece.name === Piece.KNIGHT && row !== 0 && (col !== 1
                             || col !== 6)) {
                             if (piece.colour === colour) {
                                 score += 10
                             } else {
                                 score -= 10
                             }
-                        } else if (piece instanceof Rook && row !== 0 && (col !== 0
+                        } else if (piece.name === Piece.ROOK && row !== 0 && (col !== 0
                             || col !== 7)) {
                             if (piece.colour === colour) {
                                 score += 5
                             } else {
                                 score -= 5
                             }
-                        } else if (piece instanceof Bishop && row !== 0 && (col !== 2
+                        } else if (piece.name === Piece.BISHOP && row !== 0 && (col !== 2
                             || col !== 5)) {
                             if (piece.colour === colour) {
                                 score += 10
@@ -584,21 +579,21 @@ const test = async (message) => {
                             }
                         }
                         // castling
-                        if (piece instanceof King && (col === 2 || col === 6) && colour === piece.colour) {
+                        if (piece.name === Piece.KING && (col === 2 || col === 6) && colour === piece.colour) {
                             score +=20
                         }
                         // double pawns bad for ai, but good if he doubles opponent's pawn
-                        if (piece instanceof Pawn && piece.colour === colour) {
-                            if (this.getPiece(row + 1, col) instanceof Pawn && piece.colour === colour) {
+                        if (piece.name === Piece.PAWN && piece.colour === colour) {
+                            if (!this.isEmpty(row + 1, col) && this.getPiece(row + 1, col).name === Piece.PAWN && piece.colour === colour) {
                                 score -= 20
                             }
-                        } else if (piece instanceof Pawn && piece.colour !== colour) {
-                            if (this.getPiece(row - 1, col) instanceof Pawn && piece.colour !== colour) {
+                        } else if (piece.name === Piece.PAWN && piece.colour !== colour) {
+                            if (!this.isEmpty(row - 1, col) && this.getPiece(row - 1, col).name === Piece.PAWN && piece.colour !== colour) {
                                 score += 20
                             }
                         }
                         // under check == bad, check opponent == good
-                        if (piece instanceof King && piece.colour === colour) {
+                        if (piece.name === Piece.KING && piece.colour === colour) {
                             if (this.isCheck(colour, attacked)) {
                                 score -= 10
                             }
@@ -744,7 +739,7 @@ const test = async (message) => {
             const parseMove = new Move(
                 new Cell(data.oldCellRow, data.oldCellCol),
                 new Cell(data.newCellRow, data.newCellCol),
-                board.getPiece(data.oldCellRow, data.oldCellCol),
+                Piece.parsePieceString(data.pieceString),
                 data.isEnPassant,
                 {isCastle: false}, // TODO : handle
                 null,
@@ -767,11 +762,37 @@ const test = async (message) => {
     class Piece {
         static WHITE = -1
         static BLACK = 1
+        static ROOK = "r"
+        static BISHOP = "b"
+        static KNIGHT = "n"
+        static KING = "k"
+        static QUEEN = "q"
+        static PAWN = "p"
         isAlive = true
         constructor(colour, cell, moves= []) {
             this.colour = colour // white or black
             this.cell = cell
             this.moves = moves // moves made by the piece so far, [[startRow, startCol, endRow, endCol]], most recent at the back (can pop())
+        }
+        static parsePieceString = (pieceString) => {
+            const pieceColour = pieceString.slice(0, 1)
+            const actualColour = pieceColour === "w" ? Piece.WHITE : Piece.BLACK
+            const piece = pieceString.slice(1, 2)
+            if (piece === "b") {
+                return new Bishop(actualColour, new Cell(0, 0))
+            } else if (piece === 'k') {
+                return new King(actualColour, new Cell(0, 0))
+            } else if (piece === 'n') {
+                return new Knight(actualColour, new Cell(0, 0))
+            } else if (piece === 'p') {
+                return new Pawn(actualColour, new Cell(0, 0))
+            } else if (piece === 'q') {
+                return new Queen(actualColour, new Cell(0, 0))
+            } else if (piece === 'r') {
+                return new Rook(actualColour, new Cell(0, 0))
+            } else {
+                return null
+            }
         }
     }
     class Player {
@@ -783,6 +804,7 @@ const test = async (message) => {
     class Bishop extends Piece {
         directions = [[1,1], [-1,-1], [1,-1],[-1,1]]
         points = 3
+        name = Piece.BISHOP
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
         }
@@ -863,6 +885,7 @@ const test = async (message) => {
         directions = [[1,1], [-1,-1], [1,-1],[-1,1],[0,1], [1,0], [0,-1],[-1,0]]
         static KING_SIDE = 'king'
         static QUEEN_SIDE = 'queen'
+        name = Piece.KING
         points = 9999
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
@@ -953,6 +976,7 @@ const test = async (message) => {
         directions = [[1, 2], [1, -2], [2, 1], [2, -1], [-1, 2], [-1, -2], [-2, 1], [-2, -1]]
 
         points = 3
+        name = Piece.KNIGHT
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 
@@ -1022,6 +1046,7 @@ const test = async (message) => {
     }
     class Pawn extends Piece {
         points = 1
+        name = Piece.PAWN
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 
@@ -1070,7 +1095,7 @@ const test = async (message) => {
             // en passant
             if (board.canMove(newRow, newCol) && board.moves.length > 0) {
                 const prevMove = board.moves.slice(-1)[0]
-                if (prevMove.piece instanceof Pawn && prevMove.newCell.row === this.cell.row && prevMove.newCell.col === this.cell.col + 1
+                if (prevMove.piece.name === Piece.PAWN && prevMove.newCell.row === this.cell.row && prevMove.newCell.col === this.cell.col + 1
                     && Math.abs(prevMove.newCell.row - prevMove.oldCell.row) === 2) {
                     const move = new Move(this.cell, new Cell(newRow, newCol), this, true)
                     if (!board.willCheck(this, move)) {
@@ -1091,7 +1116,7 @@ const test = async (message) => {
             // en passant
             if (board.canMove(newRow, newCol) && board.moves.length > 0) {
                 const prevMove = board.moves.slice(-1)[0]
-                if (prevMove.piece instanceof Pawn && prevMove.newCell.row === this.cell.row && prevMove.newCell.col === this.cell.col - 1
+                if (prevMove.piece.name === Piece.PAWN && prevMove.newCell.row === this.cell.row && prevMove.newCell.col === this.cell.col - 1
                     && Math.abs(prevMove.newCell.row - prevMove.oldCell.row) === 2) {
                     const move = new Move(this.cell, new Cell(newRow, newCol), this, true)
                     if (!board.willCheck(this, move)) {
@@ -1158,6 +1183,7 @@ const test = async (message) => {
     class Queen extends Piece {
         directions = [[1,1], [-1,-1], [1,-1],[-1,1], [0,1], [1,0], [0,-1],[-1,0]]
         points = 9
+        name = Piece.QUEEN
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 
@@ -1238,6 +1264,7 @@ const test = async (message) => {
     class Rook extends Piece {
         directions = [[0,1], [1,0], [0,-1],[-1,0]]
         points = 5
+        name = Piece.ROOK
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
 
@@ -1319,10 +1346,13 @@ const test = async (message) => {
     }
 
 
-    const data = message.data
-    const nextMove = ab(data[0], data[1], data[2])
+        const data = message.data
+        const nextMove = ab(data[0], data[1], data[2])
 
-    postMessage(nextMove.getMoveString())
+        postMessage(nextMove.getMoveString())
+
+
+
 }
 // eslint-disable-next-line no-restricted-globals,no-undef
 self.addEventListener("message", test);

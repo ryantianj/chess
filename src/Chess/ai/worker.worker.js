@@ -118,7 +118,7 @@ const test = async (message) => {
     const quiesce = (alpha, beta, board, colour, depth) => {
         // const evaluation = evaluate(board, colour)
         let evaluation
-        const boardHash = board.getBoardHash() + colour.toString() + depth.toString()
+        const boardHash = board.getBoardHash() + colour.toString()
         if (mem.has(boardHash)) {
             nodes++
             evaluation = mem.get(boardHash)

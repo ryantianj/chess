@@ -121,7 +121,7 @@ export const ChessContextProvider = (props) => {
             if (ai) {
                 // console.log("calling worker", game.board.getBoardString())
                 const moveString = game.board.moves.map(x => Move.getMoveString(x))
-                myWorker.postMessage([game.board.getBoardString(), 3, moveString])
+                myWorker.postMessage([game.board.getBoardString(), 4, moveString])
             }
         }
     }

@@ -9,7 +9,7 @@ const test = async (message) => {
     if (totalMoves % 2 === 0) {
         mem = new Map()
     }
-    console.log("mem", mem.size)
+    // console.log("mem", mem.size)
     totalMoves++
     const ab =  (boardString, depth, moveString) => {
         nodes = 0
@@ -21,8 +21,8 @@ const test = async (message) => {
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, Piece.BLACK, Piece.BLACK)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
         const end = performance.now()
-        console.log(nodes, end - start, totalMoves)
-        console.log("Score", result[1])
+        // console.log(nodes, end - start, totalMoves)
+        // console.log("Score", result[1])
         return result[0] // should be a move
     }
 
@@ -51,9 +51,9 @@ const test = async (message) => {
         // nodes++
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
-            const result = maxPlayer * -1 * quiesce(alpha, beta, board, currentPlayer, 1)
+            const result = maxPlayer * quiesce(alpha, beta, board, currentPlayer, 2) // TODO: for even calling depth no need -1, for odd , -1
 
-            return [null, result] // for even depth no need -1, for odd , -1
+            return [null, result]
         }
         const testGameOver = board.isGameOver(currentPlayer)
         if (testGameOver.isGameOver && currentPlayer === maxPlayer) {
@@ -93,7 +93,7 @@ const test = async (message) => {
                     minEval = currentEval
                     bestMove = move
                 }
-                beta = Math.max(beta, currentEval)
+                beta = Math.min(beta, currentEval)
                 if (beta <= alpha) {
                     break
                 }
@@ -1384,7 +1384,7 @@ const test = async (message) => {
             [0,  0,  0,  5,  5,  0,  0,  0]
         ]
         blackScore = [
-            [0,  0,  4,  5,  5,  4,  0,  0],
+            [0,  0,  4,  5,  5,  10,  0,  0],
             [-5,  0,  0,  0,  0,  0,  0, -5],
             [-5,  0,  0,  0,  0,  0,  0, -5],
             [-5,  0,  0,  0,  0,  0,  0, -5],

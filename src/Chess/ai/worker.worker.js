@@ -14,13 +14,13 @@ const test = async (message) => {
         nodes = 0
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        // const start = performance.now()
+        const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        // const end = performance.now()
-        // console.log(nodes, end - start, totalMoves)
-        // console.log("Score", result[1])
+        const end = performance.now()
+        console.log(nodes, end - start, totalMoves)
+        console.log("Score", result[1])
         return result[0] // should be a move
     }
 
@@ -48,8 +48,7 @@ const test = async (message) => {
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
-            const result = quiesce(alpha, beta, board, currentPlayer, 2) * (orgDepth % 2 === 0 ? 1 : -1)
-            // TODO: for even calling depth no need -1, for odd , -1
+            const result = quiesce(alpha, beta, board, currentPlayer, 2) * (maxPlayer === currentPlayer ? 1 : -1)
 
             return [null, result]
         }

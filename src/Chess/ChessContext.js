@@ -145,6 +145,7 @@ export const ChessContextProvider = (props) => {
             if (ai) {
                 const moveString = game.board.moves.map(x => Move.getMoveString(x))
                 myWorker.postMessage([game.board.getBoardString(), 4, moveString, aiColour])
+
             }
         }
     }

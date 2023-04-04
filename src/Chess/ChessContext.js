@@ -29,7 +29,9 @@ const ChessContext = React.createContext({
     ai: false,
     engineMove: () => {},
     aiColour: Piece.BLACK,
-    setAiColour: () => {}
+    setAiColour: () => {},
+    setDepth: () => {},
+    depth: 3
 });
 
 
@@ -42,33 +44,28 @@ export const ChessContextProvider = (props) => {
     const [gameOver, isGameOver] = useState({isGameOver: false})
     const [ai, isAI] = useState(false)
     const [aiColour, setColour] = useState(Piece.BLACK)
+    const [depth, setEngineDepth] = useState(3)
+
+    const setDepth = (depth) => {
+        setEngineDepth(depth)
+    }
 
     const setAiColour = (colour) => {
         setColour(colour)
-        if (colour === Piece.WHITE) {
-            if (game.turnColour === aiColour) {
-                if (ai) {
-                    const moveString = game.board.moves.map(x => Move.getMoveString(x))
-                    myWorker.postMessage([game.board.getBoardString(), 4, moveString, aiColour])
-                }
-            }
-        }
     }
 
     const toggleEngine = () => {
         if (!ai) {
+            if (game.turnColour === aiColour) { // white ai to start
+                const moveString = game.board.moves.map(x => Move.getMoveString(x))
+                myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
+            }
             alert("Engine on")
         } else {
             alert("Engine off")
         }
         isAI(prevState =>
         {
-            if (game.turnColour === aiColour) {
-                if (!prevState) {
-                    const moveString = game.board.moves.map(x => Move.getMoveString(x))
-                    myWorker.postMessage([game.board.getBoardString(), 4, moveString, aiColour])
-                }
-            }
             return !prevState
         })
     }
@@ -144,7 +141,7 @@ export const ChessContextProvider = (props) => {
         if (game.turnColour === aiColour) {
             if (ai) {
                 const moveString = game.board.moves.map(x => Move.getMoveString(x))
-                myWorker.postMessage([game.board.getBoardString(), 4, moveString, aiColour])
+                myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
 
             }
         }
@@ -231,7 +228,9 @@ export const ChessContextProvider = (props) => {
             ai: ai,
             engineMove: engineMove,
             aiColour:aiColour,
-            setAiColour: setAiColour
+            setAiColour: setAiColour,
+            depth: depth,
+            setDepth: setDepth
         }}>
             {props.children}
         </ChessContext.Provider>

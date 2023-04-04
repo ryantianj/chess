@@ -16,7 +16,7 @@ const test = async (message) => {
         copyBoard.setBoardString(boardString)
         // const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
-        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour)
+        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
         // const end = performance.now()
         // console.log(nodes, end - start, totalMoves)
@@ -45,11 +45,11 @@ const test = async (message) => {
         return 0
     }
 
-    const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer) => {
+    const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
         // nodes++
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
-            const result = quiesce(alpha, beta, board, currentPlayer, 2)
+            const result = quiesce(alpha, beta, board, currentPlayer, 2) * (orgDepth % 2 === 0 ? 1 : -1)
             // TODO: for even calling depth no need -1, for odd , -1
 
             return [null, result]
@@ -70,7 +70,7 @@ const test = async (message) => {
             let maxEval = -Number.MAX_VALUE
             for (const move of moves) {
                 board.movePiece(move.piece, move)
-                const currentEval = miniMax(board, depth - 1, alpha, beta, false, maxPlayer, switchColour(currentPlayer))[1]
+                const currentEval = miniMax(board, depth - 1, alpha, beta, false, maxPlayer, switchColour(currentPlayer), orgDepth)[1]
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
@@ -86,7 +86,7 @@ const test = async (message) => {
             let minEval = Number.MAX_VALUE
             for (const move of moves) {
                 board.movePiece(move.piece, move)
-                const currentEval = miniMax(board, depth - 1, alpha, beta, true, maxPlayer, switchColour(currentPlayer))[1]
+                const currentEval = miniMax(board, depth - 1, alpha, beta, true, maxPlayer, switchColour(currentPlayer), orgDepth)[1]
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval

@@ -26,11 +26,19 @@ const GameBar = () => {
 
             <Button onClick={() => chessCtx.newGame()}>New Game</Button>
             {<Button onClick={() => chessCtx.undo()}>Undo</Button>}
-            {!chessCtx.game.board.moves.length >0 && <Button onClick={() => chessCtx.toggleEngine()}>Toggle Engine</Button>}
-            {!chessCtx.game.board.moves.length >0 && "Play as: "}
-            {!chessCtx.game.board.moves.length >0 && <select onChange={(e) => chessCtx.setAiColour(parseInt(e.target.value))}>
+            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai && <Button onClick={() => chessCtx.toggleEngine()}>Engine on</Button>}
+            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai && "Play as: "}
+            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai && <select value={chessCtx.aiColour}
+                onChange={(e) => chessCtx.setAiColour(parseInt(e.target.value))}>
                 <option value={Piece.BLACK}>White</option>
                 <option value={Piece.WHITE}>Black</option>
+            </select>}
+            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai && "Depth: "}
+            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai &&
+                <select value={chessCtx.depth}
+                    onChange={(e) => chessCtx.setDepth(parseInt(e.target.value))}>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
             </select>}
         </div>
     )

@@ -16,7 +16,7 @@ const Clock = ({colour}) => {
     }, [isRunning, time])
 
     useEffect(() => {
-        startAndStop(chessCtx.game.turnColour === colour)
+        startAndStop(chessCtx.game.turnColour === colour && chessCtx.game.board.moves.length >0)
     }, [chessCtx.game.turnColour])
 
     useEffect(() => {

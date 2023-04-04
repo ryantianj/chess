@@ -8,7 +8,7 @@ const test = async (message) => {
     if (totalMoves % 2 === 0) {
         mem = new Map()
     }
-    // console.log("mem", mem.size)
+    // console.log("mem", mem.size) TODO: check if endgame before running search, set global var isEndGame
     totalMoves++
     const ab =  (boardString, depth, moveString, colour) => {
         nodes = 0
@@ -46,7 +46,6 @@ const test = async (message) => {
     }
 
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
-        // nodes++
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
             const result = quiesce(alpha, beta, board, currentPlayer, 2) * (orgDepth % 2 === 0 ? 1 : -1)
@@ -119,7 +118,6 @@ const test = async (message) => {
         let evaluation
         const boardHash = board.getBoardHash() + colour.toString()
         if (mem.has(boardHash)) {
-            nodes++
             evaluation = mem.get(boardHash)
         } else {
             evaluation = evaluate(board, colour)
@@ -137,7 +135,7 @@ const test = async (message) => {
         const moves = board.getAllMoves(colour)
         moves.sort(sortMovesQuiesce)
         for (const move of moves) {
-            if (move.ate !== null && move.ate.points > move.piece.points) {
+            if (move.ate !== null && move.ate.points > move.piece.points) { //  && move.ate.points > move.piece.points
                 board.movePiece(move.piece, move)
                 let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
                 board.undoMove()
@@ -606,12 +604,11 @@ const test = async (message) => {
                     }
                 }
             }
-            const total = score + materialScore
             // if (this.board[3][4] instanceof Pawn && this.board[3][4].colour === Piece.WHITE
             // && this.board) {
             //     console.log(this.board)
             // }
-            return total
+            return score + materialScore
         }
 
         /**
@@ -926,9 +923,28 @@ const test = async (message) => {
             [-30,-40,-40,-50,-50,-40,-40,-30],
             [-30,-40,-40,-50,-50,-40,-40,-30],
         ]
+        whiteScoreEnd = [
+            [-50,-40,-30,-20,-20,-30,-40,-50],
+            [-30,-20,-10,  0,  0,-10,-20,-30],
+            [-30,-10, 20, 30, 30, 20,-10,-30],
+            [-30,-10, 30, 40, 40, 30,-10,-30],
+            [-30,-10, 30, 40, 40, 30,-10,-30],
+            [-30,-10, 20, 30, 30, 20,-10,-30],
+            [-30,-30,  0,  0,  0,  0,-30,-30],
+            [-50,-30,-30,-30,-30,-30,-30,-50]
+        ]
+        blackScoreEnd = [
+            [-50,-30,-30,-30,-30,-30,-30,-50],
+            [-30,-30,  0,  0,  0,  0,-30,-30],
+            [-30,-10, 20, 30, 30, 20,-10,-30],
+            [-30,-10, 30, 40, 40, 30,-10,-30],
+            [-30,-10, 30, 40, 40, 30,-10,-30],
+            [-30,-10, 20, 30, 30, 20,-10,-30],
+            [-30,-20,-10,  0,  0,-10,-20,-30],
+            [-50,-40,-30,-20,-20,-30,-40,-50],
+        ]
         constructor(colour, cell, moves) {
             super(colour, cell, moves)
-
         }
 
         /**

@@ -4,24 +4,29 @@ const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
-    if (totalMoves % 2 === 0) {
+    if (true) {
         mem = new Map()
     }
     // console.log("mem", mem.size)
-    // TODO: check if endgame before running search, set score tables before search
-    // TODO: update piece score tables based on position before running search
+    // TODO: check if endgame before running search, set score tables before search, done after set board string
     // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
+    // TODO: update piece score tables based on position before running search, done after set board string
+    // for knight, -5 per missing pawn of any colour
+    // for bishop, fianchetto bonus points, control over square colour (using pawns), bishop pair bonus
+    // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
+    // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
+
     const ab =  (boardString, depth, moveString, colour) => {
         totalMoves++
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        // const start = performance.now()
+        const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        // const end = performance.now()
-        // console.log(end - start, totalMoves)
-        // console.log("Score", result[1])
+        const end = performance.now()
+        console.log(end - start, totalMoves)
+        console.log("Score", result[1])
         return result[0] // should be a move
     }
 
@@ -581,15 +586,15 @@ const test = async (message) => {
                         }
 
                         // double pawns bad for ai, but good if he doubles opponent's pawn
-                        if (piece.name === Piece.PAWN && piece.colour === Piece.WHITE) {
-                            if (!this.isEmpty(row + 1, col) && this.getPiece(row + 1, col).name === Piece.PAWN && piece.colour === Piece.WHITE) {
-                                score -= 20
-                            }
-                        } else if (piece.name === Piece.PAWN && piece.colour !== Piece.WHITE) {
-                            if (!this.isEmpty(row - 1, col) && this.getPiece(row - 1, col).name === Piece.PAWN && piece.colour !== Piece.WHITE) {
-                                score += 20
-                            }
-                        }
+                        // if (piece.name === Piece.PAWN && piece.colour === Piece.WHITE) {
+                        //     if (!this.isEmpty(row + 1, col) && this.getPiece(row + 1, col).name === Piece.PAWN && piece.colour === Piece.WHITE) {
+                        //         score -= 20
+                        //     }
+                        // } else if (piece.name === Piece.PAWN && piece.colour !== Piece.WHITE) {
+                        //     if (!this.isEmpty(row - 1, col) && this.getPiece(row - 1, col).name === Piece.PAWN && piece.colour !== Piece.WHITE) {
+                        //         score += 20
+                        //     }
+                        // }
                         // under check == bad, check opponent == good
                         // if (piece.name === Piece.KING && piece.colour === colour) {
                         //     if (this.isCheck(colour, attacked)) {

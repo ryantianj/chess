@@ -201,12 +201,21 @@ export const ChessContextProvider = (props) => {
             setSelectedPiece(null)
             isGameOver({isGameOver: false})
             isAI(false)
+            myWorker.postMessage({newGame: true})
         }
     }
 
     const undo = () => {
         if (!gameOver.isGameOver) {
-            game.undoMove()
+            if (ai) {
+                if (game.board.moves.length > 1) {
+                    game.undoMove()
+                    game.undoMove()
+                    myWorker.postMessage({undo: true})
+                }
+            } else {
+                game.undoMove()
+            }
             setHighlightCell([])
         }
     }

@@ -36,6 +36,7 @@
     justify-content: center;
     align-items: center;
     border: none;
+    position: relative;
 }
 
 .cell:hover {
@@ -59,6 +60,18 @@
     border-radius: 50%;
     background-color: red;
     z-index: 10;
+}
+
+.alphabetCoord {
+    position: absolute;
+    bottom: -8px;
+    right: 2px;
+}
+
+.numberCoord {
+    position: absolute;
+    top: -8px;
+    left: 2px;
 }
 
 .focus {
@@ -96,5 +109,12 @@
     .promotionPiece {
         width: 11vw;
         height: 11vw;
+    }
+    .alphabetCoord {
+        font-size: 8px;
+    }
+
+    .numberCoord {
+        font-size: 8px;
     }
 }

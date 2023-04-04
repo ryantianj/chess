@@ -112,6 +112,8 @@ const BoardCell = ({row, col, piece}) => {
                 alt={"piece"}
                 draggable={chessCtx.ai && piece !== null && piece.colour === chessCtx.aiColour ? "false" : "true"} onDragStart={handleDrag}
             />}
+            {row === 7 && <p className="alphabetCoord">{String.fromCharCode(col + 97)}</p>}
+            {col === 0 && <p className="numberCoord">{String.fromCharCode(56 - row)}</p>}
         </button>
     )
 }

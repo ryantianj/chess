@@ -4,23 +4,24 @@ const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
-    let nodes = 0
     if (totalMoves % 2 === 0) {
         mem = new Map()
     }
-    // console.log("mem", mem.size) TODO: check if endgame before running search, set global var isEndGame
-    totalMoves++
+    // console.log("mem", mem.size)
+    // TODO: check if endgame before running search, set score tables before search
+    // TODO: update piece score tables based on position before running search
+    // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
     const ab =  (boardString, depth, moveString, colour) => {
-        nodes = 0
+        totalMoves++
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        const start = performance.now()
+        // const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        const end = performance.now()
-        console.log(nodes, end - start, totalMoves)
-        console.log("Score", result[1])
+        // const end = performance.now()
+        // console.log(end - start, totalMoves)
+        // console.log("Score", result[1])
         return result[0] // should be a move
     }
 
@@ -1485,9 +1486,50 @@ const test = async (message) => {
 
         try {
             const data = message.data
-            const nextMove = ab(data[0], data[1], data[2], data[3])
+            if (data.newGame) {
+                totalMoves = 0
+                mem = new Map()
+            } else if (data.undo) {
+                totalMoves--
+                mem = new Map()
+            } else {
+                const boardString = data[0]
+                const depth = data[1]
+                const moveString = data[2]
+                const colour = data[3]
+                if (totalMoves === 0) {
+                    if (colour === Piece.WHITE) {
+                        // equal chance to play d4, e4
+                        const moves = [
+                            new Move(new Cell(6, 3), new Cell(4,3), new Pawn(Piece.WHITE, new Cell(6, 3))),
+                            new Move(new Cell(6, 4), new Cell(4,4), new Pawn(Piece.WHITE, new Cell(6, 4))),
+                        ]
+                        const randomIndex = Math.round(Math.random() * (moves.length - 1))
 
-            postMessage(nextMove.getMoveString())
+                        postMessage(moves[randomIndex].getMoveString())
+                    } else {
+                        // equal chance to play c5 / e5, in response to e4
+                        const getMove = moveString.map(x => Move.parseMove(undefined, x))[0]
+                        if (getMove.oldCell.row === 6 && getMove.oldCell.col === 4 && getMove.newCell.row === 4 && getMove.newCell.col === 4) {
+                            const moves = [
+                                new Move(new Cell(1, 2), new Cell(3,2), new Pawn(Piece.BLACK, new Cell(1, 2))),
+                                new Move(new Cell(1, 4), new Cell(3,4), new Pawn(Piece.BLACK, new Cell(1, 4))),
+                            ]
+                            const randomIndex = Math.round(Math.random() * (moves.length - 1))
+
+                            postMessage(moves[randomIndex].getMoveString())
+                        } else {
+                            const nextMove = ab(boardString, depth, moveString, colour)
+                            postMessage(nextMove.getMoveString())
+                        }
+                    }
+                    totalMoves++
+                } else {
+                    const nextMove = ab(boardString, depth, moveString, colour)
+                    postMessage(nextMove.getMoveString())
+                }
+            }
+
         } catch (e) {
             postMessage({isError: true, message:"Error: " + e})
         }

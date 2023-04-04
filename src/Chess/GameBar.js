@@ -15,6 +15,8 @@ const GameBar = () => {
         }
     }, [chessCtx.gameOver, chessCtx.selectedPiece])
 
+    const showButtons = !chessCtx.game.board.moves.length >0 && !chessCtx.ai
+
     return (
         <div className="gameBar">
             {modalOpen && <Modal component={
@@ -26,19 +28,19 @@ const GameBar = () => {
 
             <Button onClick={() => chessCtx.newGame()}>New Game</Button>
             {<Button onClick={() => chessCtx.undo()}>Undo</Button>}
-            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai && <Button onClick={() => chessCtx.toggleEngine()}>Engine on</Button>}
-            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai && "Play as: "}
-            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai && <select value={chessCtx.aiColour}
+            {showButtons && <Button onClick={() => chessCtx.toggleEngine()}>Engine on</Button>}
+            {showButtons && "Play as: "}
+            {showButtons && <select value={chessCtx.aiColour}
                 onChange={(e) => chessCtx.setAiColour(parseInt(e.target.value))}>
                 <option value={Piece.BLACK}>White</option>
                 <option value={Piece.WHITE}>Black</option>
             </select>}
-            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai && "Depth: "}
-            {!chessCtx.game.board.moves.length >0 && !chessCtx.ai &&
+            {showButtons && "Depth: "}
+            {showButtons &&
                 <select value={chessCtx.depth}
                     onChange={(e) => chessCtx.setDepth(parseInt(e.target.value))}>
-                <option value={3}>3 (easier)</option>
-                <option value={4}>4 (easy)</option>
+                <option value={3}>3 +2 (easier)</option>
+                <option value={4}>4 +2 (easy)</option>
             </select>}
         </div>
     )

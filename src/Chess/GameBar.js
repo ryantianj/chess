@@ -4,6 +4,7 @@ import ChessContext from "./ChessContext";
 import Modal from "../components/Modal";
 import GameOverModal from "../components/GameOverModal";
 import Button from "../components/Button";
+import Piece from "./logic/Piece";
 
 const GameBar = () => {
     const chessCtx = useContext(ChessContext)
@@ -26,6 +27,11 @@ const GameBar = () => {
             <Button onClick={() => chessCtx.newGame()}>New Game</Button>
             {<Button onClick={() => chessCtx.undo()}>Undo</Button>}
             {!chessCtx.game.board.moves.length >0 && <Button onClick={() => chessCtx.toggleEngine()}>Toggle Engine</Button>}
+            {!chessCtx.game.board.moves.length >0 && "Play as: "}
+            {!chessCtx.game.board.moves.length >0 && <select onChange={(e) => chessCtx.setAiColour(parseInt(e.target.value))}>
+                <option value={Piece.BLACK}>White</option>
+                <option value={Piece.WHITE}>Black</option>
+            </select>}
         </div>
     )
 }

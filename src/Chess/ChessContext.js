@@ -28,6 +28,8 @@ const ChessContext = React.createContext({
     toggleEngine: () => {},
     ai: false,
     engineMove: () => {},
+    aiColour: Piece.BLACK,
+    setAiColour: () => {}
 });
 
 
@@ -39,6 +41,19 @@ export const ChessContextProvider = (props) => {
     const [promotionDetails, setPromotionDetails] = useState([])
     const [gameOver, isGameOver] = useState({isGameOver: false})
     const [ai, isAI] = useState(false)
+    const [aiColour, setColour] = useState(Piece.BLACK)
+
+    const setAiColour = (colour) => {
+        setColour(colour)
+        if (colour === Piece.WHITE) {
+            if (game.turnColour === aiColour) {
+                if (ai) {
+                    const moveString = game.board.moves.map(x => Move.getMoveString(x))
+                    myWorker.postMessage([game.board.getBoardString(), 4, moveString, aiColour])
+                }
+            }
+        }
+    }
 
     const toggleEngine = () => {
         if (!ai) {
@@ -46,7 +61,16 @@ export const ChessContextProvider = (props) => {
         } else {
             alert("Engine off")
         }
-        isAI(prevState => !prevState)
+        isAI(prevState =>
+        {
+            if (game.turnColour === aiColour) {
+                if (!prevState) {
+                    const moveString = game.board.moves.map(x => Move.getMoveString(x))
+                    myWorker.postMessage([game.board.getBoardString(), 4, moveString, aiColour])
+                }
+            }
+            return !prevState
+        })
     }
 
     // display current available moves for a selected piece
@@ -117,11 +141,11 @@ export const ChessContextProvider = (props) => {
         }
         setHighlightCell([])
         setSelectedPiece(null)
-        if (game.turnColour === Piece.BLACK) {
+        if (game.turnColour === aiColour) {
             if (ai) {
-                // console.log("calling worker", game.board.getBoardString())
                 const moveString = game.board.moves.map(x => Move.getMoveString(x))
-                myWorker.postMessage([game.board.getBoardString(), 4, moveString])
+                myWorker.postMessage([game.board.getBoardString(), 4, moveString, aiColour])
+
             }
         }
     }
@@ -156,7 +180,7 @@ export const ChessContextProvider = (props) => {
             }
             if (message) {
                 const data = message.data
-                if (data instanceof Error) {
+                if (data.isError) {
                     alert("Engine error: " + data.message)
                 } else {
                     const parseMove = Move.parseMove(game, data)
@@ -206,6 +230,8 @@ export const ChessContextProvider = (props) => {
             toggleEngine: toggleEngine,
             ai: ai,
             engineMove: engineMove,
+            aiColour:aiColour,
+            setAiColour: setAiColour
         }}>
             {props.children}
         </ChessContext.Provider>

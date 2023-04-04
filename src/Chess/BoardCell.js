@@ -100,7 +100,8 @@ const BoardCell = ({row, col, piece}) => {
     }
     return (
         <button className={getCSS()} onDragOver={allowDrop} onDrop={handleDrop} onClick={handleClick}
-                disabled={chessCtx.ai && piece !== null && piece.colour === Piece.BLACK && chessCtx.game.turnColour === Piece.BLACK}>
+                disabled={chessCtx.ai && piece !== null && piece.colour === chessCtx.aiColour && chessCtx.game.turnColour === chessCtx.aiColour}
+        >
             {isHighlight() && <div className="highlight"></div>}
             {chessCtx.promotion && chessCtx.promotionDetails.row === row && chessCtx.promotionDetails.col === col
                 && <span className="tooltip">{getPromote()}</span>}
@@ -109,7 +110,7 @@ const BoardCell = ({row, col, piece}) => {
                 src={piece.image}
                 className="boardPiece"
                 alt={"piece"}
-                draggable={chessCtx.ai && piece !== null && piece.colour === Piece.BLACK ? "false" : "true"} onDragStart={handleDrag}
+                draggable={chessCtx.ai && piece !== null && piece.colour === chessCtx.aiColour ? "false" : "true"} onDragStart={handleDrag}
             />}
         </button>
     )

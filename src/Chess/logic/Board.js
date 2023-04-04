@@ -350,29 +350,6 @@ class Board {
         return squares
     }
 
-    /**
-     * used for minimax heuristics
-     * @param colour colour making the next move
-     * @return {number} score of position
-     */
-    getScore = (colour) => {
-        let whiteScore = 0
-        let blackScore = 0
-        let materialScore = 0
-        for (let row = 0; row < 8; row ++) {
-            for (let col = 0; col < 8; col ++) {
-                const piece = this.#board[row][col]
-                if (piece instanceof Piece && piece.colour === colour) {
-                    materialScore += piece.points
-                }
-                if (piece instanceof Piece && piece.colour !== colour) {
-                    materialScore -= piece.points
-                }
-            }
-        }
-        return materialScore
-    }
-
     getBoardString = () => {
         const newBoard = []
         for (let row = 0; row < 8; row++) {

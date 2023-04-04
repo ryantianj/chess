@@ -51,10 +51,11 @@ const test = async (message) => {
         return 0
     }
 
-    const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
+    const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer) => {
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
-            const result = quiesce(alpha, beta, board, currentPlayer, 2) * (maxPlayer === currentPlayer ? 1 : -1)
+            const result = (maxPlayer === currentPlayer ? 1 : -1) * quiesce(alpha, beta, board, currentPlayer, 2)
+
 
             return [null, result]
         }
@@ -74,7 +75,7 @@ const test = async (message) => {
             let maxEval = -Number.MAX_VALUE
             for (const move of moves) {
                 board.movePiece(move.piece, move)
-                const currentEval = miniMax(board, depth - 1, alpha, beta, false, maxPlayer, switchColour(currentPlayer), orgDepth)[1]
+                const currentEval = miniMax(board, depth - 1, alpha, beta, false, maxPlayer, switchColour(currentPlayer))[1]
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
@@ -90,7 +91,7 @@ const test = async (message) => {
             let minEval = Number.MAX_VALUE
             for (const move of moves) {
                 board.movePiece(move.piece, move)
-                const currentEval = miniMax(board, depth - 1, alpha, beta, true, maxPlayer, switchColour(currentPlayer), orgDepth)[1]
+                const currentEval = miniMax(board, depth - 1, alpha, beta, true, maxPlayer, switchColour(currentPlayer))[1]
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval
@@ -125,7 +126,7 @@ const test = async (message) => {
         if (mem.has(boardHash)) {
             evaluation = mem.get(boardHash)
         } else {
-            evaluation = evaluate(board, colour)
+            evaluation = evaluate(board,  colour)
             mem.set(boardHash, evaluation)
         }
 
@@ -140,7 +141,7 @@ const test = async (message) => {
         const moves = board.getAllMoves(colour)
         moves.sort(sortMovesQuiesce)
         for (const move of moves) {
-            if (move.ate !== null && move.ate.points > move.piece.points) { //  && move.ate.points > move.piece.points
+            if (move.ate !== null) { //  && move.ate.points > move.piece.points
                 board.movePiece(move.piece, move)
                 let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
                 board.undoMove()

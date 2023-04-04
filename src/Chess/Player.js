@@ -35,7 +35,8 @@ const Player = ({colour}) => {
     return (
         <div style={playerStyle()} className="player">
             <div className="info">
-                <p>{chessCtx.ai && colour === Piece.BLACK? "Stockfish's little brother v3" : colour === Piece.BLACK ? "Black" : "White"}</p>
+                <p>{chessCtx.ai && colour === chessCtx.aiColour ? "Stockfish's little brother v3"
+                    : colour === Piece.BLACK ? "Black" : "White"}</p>
                 <div className="eatenPieces">
                     {chessCtx.game.getEatenPieces(colour)
                         .map((piece, i) => <img src={piece.image} alt={"piece"} key={i} className="eatenPiece"/>)}

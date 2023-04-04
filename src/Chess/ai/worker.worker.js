@@ -20,13 +20,13 @@ const test = async (message) => {
         totalMoves++
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        const start = performance.now()
+        // const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        const end = performance.now()
-        console.log(end - start, totalMoves)
-        console.log("Score", result[1])
+        // const end = performance.now()
+        // console.log(end - start, totalMoves)
+        // console.log("Score", result[1])
         return result[0] // should be a move
     }
 
@@ -54,7 +54,8 @@ const test = async (message) => {
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
-            const result = quiesce(alpha, beta, board, currentPlayer, 2) * (maxPlayer === currentPlayer ? 1 : -1)
+            const result =  (maxPlayer === currentPlayer ? quiesce(alpha, beta, board, currentPlayer, 2)
+                : evaluate(board, maxPlayer))
 
             return [null, result]
         }
@@ -141,6 +142,43 @@ const test = async (message) => {
         moves.sort(sortMovesQuiesce)
         for (const move of moves) {
             if (move.ate !== null && move.ate.points > move.piece.points) { //  && move.ate.points > move.piece.points
+                board.movePiece(move.piece, move)
+                let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
+                board.undoMove()
+                if (score >= beta) {
+                    return beta
+                }
+                if (score > alpha) {
+                    alpha = score
+                }
+            }
+        }
+        return alpha
+    }
+
+    const quiesceOdd = (alpha, beta, board, colour, depth) => {
+        // const evaluation = evaluate(board, colour)
+        let evaluation
+        const boardHash = board.getBoardHash() + colour.toString()
+        if (mem.has(boardHash)) {
+            evaluation = mem.get(boardHash)
+        } else {
+            evaluation = evaluate(board, colour)
+            mem.set(boardHash, evaluation)
+        }
+
+        if (depth === 0) {
+            return evaluation
+        }
+        if (evaluation >= beta) {
+            return beta
+        }
+
+        alpha = Math.max(alpha, evaluation)
+        const moves = board.getAllMoves(colour)
+        moves.sort(sortMovesQuiesce)
+        for (const move of moves) {
+            if (move.ate !== null) { //  && move.ate.points > move.piece.points
                 board.movePiece(move.piece, move)
                 let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
                 board.undoMove()

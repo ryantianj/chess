@@ -44,7 +44,7 @@ export const ChessContextProvider = (props) => {
     const [gameOver, isGameOver] = useState({isGameOver: false})
     const [ai, isAI] = useState(false)
     const [aiColour, setColour] = useState(Piece.BLACK)
-    const [depth, setEngineDepth] = useState(3)
+    const [depth, setEngineDepth] = useState(2)
 
     const setDepth = (depth) => {
         setEngineDepth(depth)
@@ -208,7 +208,7 @@ export const ChessContextProvider = (props) => {
     const undo = () => {
         if (!gameOver.isGameOver) {
             if (ai) {
-                if (game.board.moves.length > 1) {
+                if (game.board.moves.length > 1 && game.turnColour !== aiColour) {
                     game.undoMove()
                     game.undoMove()
                     myWorker.postMessage({undo: true})

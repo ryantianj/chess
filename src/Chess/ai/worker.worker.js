@@ -1,5 +1,6 @@
 let totalMoves = 0
 let mem = new Map()
+let isEndGame = false
 const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
@@ -23,6 +24,8 @@ const test = async (message) => {
         copyBoard.setBoardString(boardString)
         const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
+        isEndGame = copyBoard.isEndGame()
+        console.log(isEndGame)
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
         const end = performance.now()
@@ -40,9 +43,16 @@ const test = async (message) => {
     }
 
     const sortMoves = (a, b) => { // moves tend to be closer to the center
-        const distCtrA = a.newCell.col <= 3 ? 3 - a.newCell.col : a.newCell.col - 4
-        const distCtrB = b.newCell.col <= 3 ? 3 - b.newCell.col : b.newCell.col - 4
-        return distCtrA - distCtrB
+        if (a.ate !== null && b.ate !== null) {
+            const aScore = a.piece.points - a.ate.points
+            const bScore = b.piece.points - b.ate.points
+            return aScore < bScore ? 1: -1
+        } else if (a.ate === null && b.ate === null) {
+            const distCtrA = a.newCell.col <= 3 ? 3 - a.newCell.col : a.newCell.col - 4
+            const distCtrB = b.newCell.col <= 3 ? 3 - b.newCell.col : b.newCell.col - 4
+            return distCtrA - distCtrB
+        }
+        return 0
     }
 
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
@@ -258,15 +268,49 @@ const test = async (message) => {
             ]
             return startingBoard
         }
+        // update piece square tables for endgame
+        setEndGame = () => {
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = this.getPiece(row, col)
+                    if (piece !== null) {
+                        if (piece.colour === Piece.WHITE) {
+                            piece.constructor.whiteScore = piece.constructor.whiteScoreEnd
+                        } else {
+                            piece.constructor.blackScore = piece.constructor.blackScoreEnd
+                        }
+                    }
+                }
+            }
+        }
 
         isEndGame = () => {
             // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
-            let countWhitePieces
+            let countWhitePieces = 0
+            let countBlackPieces = 0
+            let countWhiteQueen = 0
+            let countBlackQueen = 0
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
-
+                    const piece = this.getPiece(row, col)
+                    if (piece instanceof Queen) {
+                        if (piece.colour === Piece.WHITE) {
+                            countWhiteQueen++
+                        } else {
+                            countBlackQueen++
+                        }
+                    }
+                    if (piece instanceof Rook || piece instanceof Bishop || piece instanceof Knight) {
+                        if (piece.colour === Piece.WHITE) {
+                            countWhitePieces++
+                        } else {
+                            countBlackPieces++
+                        }
+                    }
                 }
             }
+            return ((countWhiteQueen <= 1 && countWhitePieces <=0) || (countBlackQueen <= 1  && countBlackPieces <=0))
+                || ((countWhitePieces <=2 && countWhiteQueen <= 0) || (countBlackPieces <=2  && countBlackQueen <= 0))
         }
 
         setBoardString = (boardString) => {
@@ -628,9 +672,9 @@ const test = async (message) => {
 
                         // development / positional score
                         if (piece.colour === Piece.WHITE) {
-                            score += piece.whiteScore[row][col]
+                            score += piece.constructor.whiteScore[row][col]
                         } else {
-                            score -= piece.blackScore[row][col]
+                            score -= piece.constructor.blackScore[row][col]
                         }
 
                         // double pawns bad for ai, but good if he doubles opponent's pawn
@@ -852,7 +896,7 @@ const test = async (message) => {
         directions = [[1,1], [-1,-1], [1,-1],[-1,1]]
         points = 330
         name = Piece.BISHOP
-        whiteScore = [
+        static whiteScore = [
             [-20,-10,-10,-10,-10,-10,-10,-20],
             [-10,  0,  0,  0,  0,  0,  0,-10],
             [-10,  0,  5, 10, 10,  5,  0,-10],
@@ -862,7 +906,7 @@ const test = async (message) => {
             [-10,  5,  0,  0,  0,  0,  5,-10],
             [-20,-10,-10,-10,-10,-10,-10,-20]
         ]
-        blackScore = [
+        static blackScore = [
             [-20,-10,-10,-10,-10,-10,-10,-20],
             [-10,  5,  0,  0,  0,  0,  5,-10],
             [-10, 10, 10, 10, 10, 10, 10,-10],
@@ -955,7 +999,7 @@ const test = async (message) => {
         name = Piece.KING
         points = 20000
 
-        whiteScore = [
+        static whiteScore = [
             [-30,-40,-40,-50,-50,-40,-40,-30],
             [-30,-40,-40,-50,-50,-40,-40,-30],
             [-30,-40,-40,-50,-50,-40,-40,-30],
@@ -966,7 +1010,7 @@ const test = async (message) => {
             [20, 30, 10,  0,  0, 10, 30, 20]
         ]
 
-        blackScore = [
+        static blackScore = [
             [20, 30, 10,  0,  0, 10, 30, 20],
             [20, 20,  0,  0,  0,  0, 20, 20],
             [-10,-20,-20,-20,-20,-20,-20,-10],
@@ -1086,7 +1130,7 @@ const test = async (message) => {
         points = 320
         name = Piece.KNIGHT
 
-        whiteScore = [
+        static whiteScore = [
             [-50,-40,-30,-30,-30,-30,-40,-50],
             [-40,-20,  0,  0,  0,  0,-20,-40],
             [-30,  0, 10, 15, 15, 10,  0,-30],
@@ -1097,7 +1141,7 @@ const test = async (message) => {
             [-50,-40,-30,-30,-30,-30,-40,-50]
         ]
 
-        blackScore = [
+        static blackScore = [
             [-50,-40,-30,-30,-30,-30,-40,-50],
             [-40,-20,  0,  5,  5,  0,-20,-40],
             [-30,  5, 10, 15, 15, 10,  5,-30],
@@ -1178,7 +1222,7 @@ const test = async (message) => {
         points = 100
         name = Piece.PAWN
 
-        whiteScore = [
+        static whiteScore = [
             [0,  0,  0,  0,  0,  0,  0,  0],
             [50, 50, 50, 50, 50, 50, 50, 50],
             [10, 10, 20, 30, 30, 20, 10, 10],
@@ -1188,7 +1232,7 @@ const test = async (message) => {
             [5, 10, 10,-20,-20, 10, 10,  5],
             [0,  0,  0,  0,  0,  0,  0,  0]
         ]
-        blackScore = [
+        static blackScore = [
             [0,  0,  0,  0,  0,  0,  0,  0],
             [5, 10, 10,-40,-40, 10, 10,  5],
             [5, 10,20,  0,  0,-10, -5,  5],
@@ -1336,7 +1380,7 @@ const test = async (message) => {
         points = 900
         name = Piece.QUEEN
 
-        whiteScore = [
+        static whiteScore = [
             [-20,-10,-10, -5, -5,-10,-10,-20],
             [-10,  0,  0,  0,  0,  0,  0,-10],
             [-10,  0,  5,  5,  5,  5,  0,-10],
@@ -1346,7 +1390,7 @@ const test = async (message) => {
             [-10,  0,  5,  0,  0,  0,  0,-10],
             [-20,-10,-10, -5, -5,-10,-10,-20]
         ]
-        blackScore = [
+        static blackScore = [
             [-20,-10,-10, -5, -5,-10,-10,-20],
             [-10,  0,  5,  0,  0,  0,  0,-10],
             [-10,  5,  5,  5,  5,  5,  0,-10],
@@ -1437,7 +1481,7 @@ const test = async (message) => {
         directions = [[0,1], [1,0], [0,-1],[-1,0]]
         points = 500
         name = Piece.ROOK
-        whiteScore = [
+        static whiteScore = [
             [0,  0,  0,  0,  0,  0,  0,  0],
             [5, 10, 10, 10, 10, 10, 10,  5],
             [-5,  0,  0,  0,  0,  0,  0, -5],
@@ -1447,7 +1491,7 @@ const test = async (message) => {
             [-5,  0,  0,  0,  0,  0,  0, -5],
             [0,  0,  0,  5,  5,  0,  0,  0]
         ]
-        blackScore = [
+        static blackScore = [
             [0,  0,  4,  5,  5,  10,  0,  0],
             [-5,  0,  0,  0,  0,  0,  0, -5],
             [-5,  0,  0,  0,  0,  0,  0, -5],

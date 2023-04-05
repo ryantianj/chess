@@ -15,18 +15,19 @@ const test = async (message) => {
     // for bishop, fianchetto bonus points, control over square colour (using pawns), bishop pair bonus
     // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
     // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
+    // sort a-b moves, closer to center === better, check first done
 
     const ab =  (boardString, depth, moveString, colour) => {
         totalMoves++
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        // const start = performance.now()
+        const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        // const end = performance.now()
-        // console.log(end - start, totalMoves)
-        // console.log("Score", result[1])
+        const end = performance.now()
+        console.log(end - start, totalMoves)
+        console.log("Score", result[1])
         return result[0] // should be a move
     }
 
@@ -38,17 +39,10 @@ const test = async (message) => {
         return colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
     }
 
-    const sortMoves = (a, b) => {
-        if (a.ate !== null && b.ate !== null) {
-            const aScore = a.piece.points - a.ate.points
-            const bScore = b.piece.points - b.ate.points
-            return aScore < bScore ? 1: -1
-        } else if (a.ate !== null) {
-            return 1
-        } else if (b.ate !== null) {
-            return -1
-        }
-        return 0
+    const sortMoves = (a, b) => { // moves tend to be closer to the center
+        const distCtrA = a.newCell.col <= 3 ? 3 - a.newCell.col : a.newCell.col - 4
+        const distCtrB = b.newCell.col <= 3 ? 3 - b.newCell.col : b.newCell.col - 4
+        return distCtrA - distCtrB
     }
 
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
@@ -265,8 +259,14 @@ const test = async (message) => {
             return startingBoard
         }
 
-        deepCopyBoard = () => {
+        isEndGame = () => {
+            // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
+            let countWhitePieces
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
 
+                }
+            }
         }
 
         setBoardString = (boardString) => {

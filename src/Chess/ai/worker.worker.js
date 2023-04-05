@@ -54,8 +54,18 @@ const test = async (message) => {
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
-            const result =  (maxPlayer === currentPlayer ? quiesce(alpha, beta, board, currentPlayer, 2)
-                : evaluate(board, maxPlayer))
+            let result
+            if (maxPlayer === currentPlayer) {
+                result = quiesce(alpha, beta, board, currentPlayer, 2)
+            } else {
+                const boardHash = board.getBoardHash() + maxPlayer.toString()
+                if (mem.has(boardHash)) {
+                    result = mem.get(boardHash)
+                } else {
+                    result = evaluate(board, maxPlayer)
+                    mem.set(boardHash, result)
+                }
+            }
 
             return [null, result]
         }

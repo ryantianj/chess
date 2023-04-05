@@ -24,7 +24,7 @@ const BoardCell = ({row, col, piece}) => {
         if (!ishighlight && piece == null) { // cell is empty, and current selection does not cover cell
             return;
         }
-        if (ishighlight) { // move piece to valid square
+        if (ishighlight && !chessCtx.promotion) { // move piece to valid square
             chessCtx.movePiece(row, col)
             return
         }

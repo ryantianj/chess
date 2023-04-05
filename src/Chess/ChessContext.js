@@ -135,14 +135,15 @@ export const ChessContextProvider = (props) => {
         if (result["promotion"] !== undefined) {
             setPromotion(true)
             setPromotionDetails(result)
-        }
-        setHighlightCell([])
-        setSelectedPiece(null)
-        if (game.turnColour === aiColour) {
-            if (ai) {
-                const moveString = game.board.moves.map(x => Move.getMoveString(x))
-                myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
+        } else {
+            setHighlightCell([])
+            setSelectedPiece(null)
+            if (game.turnColour === aiColour) {
+                if (ai) {
+                    const moveString = game.board.moves.map(x => Move.getMoveString(x))
+                    myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
 
+                }
             }
         }
     }
@@ -191,6 +192,10 @@ export const ChessContextProvider = (props) => {
         game.board.promotePiece(piece)
         setPromotion(false)
         setPromotionDetails([])
+        if (ai && game.turnColour === aiColour) {
+            const moveString = game.board.moves.map(x => Move.getMoveString(x))
+            myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
+        }
     }
 
     const newGame = () => {

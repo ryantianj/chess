@@ -192,6 +192,8 @@ export const ChessContextProvider = (props) => {
         game.board.promotePiece(piece)
         setPromotion(false)
         setPromotionDetails([])
+        setHighlightCell([])
+        setSelectedPiece(null)
         if (ai && game.turnColour === aiColour) {
             const moveString = game.board.moves.map(x => Move.getMoveString(x))
             myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])

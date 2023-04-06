@@ -1,3 +1,5 @@
+import pawn from "../logic/Pieces/Pawn";
+
 let totalMoves = 0
 let mem = new Map()
 let isEndGame = false
@@ -25,7 +27,12 @@ const test = async (message) => {
         const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         isEndGame = copyBoard.isEndGame()
-        console.log(isEndGame)
+        if (isEndGame) {
+            console.log("endgame")
+            copyBoard.setEndGame()
+        }
+        copyBoard.updatePieceValues()
+        console.log(copyBoard.board)
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
         const end = performance.now()
@@ -273,11 +280,79 @@ const test = async (message) => {
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const piece = this.getPiece(row, col)
-                    if (piece !== null) {
+                    if (piece !== null && piece.constructor.whiteScoreEnd !== undefined) {
                         if (piece.colour === Piece.WHITE) {
                             piece.constructor.whiteScore = piece.constructor.whiteScoreEnd
                         } else {
                             piece.constructor.blackScore = piece.constructor.blackScoreEnd
+                        }
+                    }
+                }
+            }
+        }
+        // update values of pieces
+        updatePieceValues = () => {
+            // for knight, -5 per missing pawn of any colour done
+            // for bishop, fianchetto bonus points, control over square colour (using pawns), bishop pair bonus
+            // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
+            // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
+            let whitePawnCount = 0
+            let blackPawnCount = 0
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = this.getPiece(row, col)
+                    if (piece !== null) {
+                        if (piece instanceof Pawn) {
+                            if (piece.colour === Piece.WHITE) {
+                                whitePawnCount++
+                            } else {
+                                blackPawnCount++
+                            }
+                        }
+                    }
+                }
+            }
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = this.getPiece(row, col)
+                    if (piece !== null) {
+                        if (piece instanceof Knight) {
+                            piece.points-= ((16 - whitePawnCount - blackPawnCount) * 3)
+                        }
+                        if (piece instanceof Bishop) {
+                            piece.points+= ((16 - whitePawnCount - blackPawnCount) * 3)
+                        }
+                        if (piece instanceof Rook) {
+                            piece.points+= ((16 - whitePawnCount - blackPawnCount) * 3)
+                        }
+                        if (piece instanceof Pawn) {
+                            let past = true
+                            if (col + 1 < 8) {
+                                for (let i = 0; i < 8; i++) {
+                                    if (this.getPiece(i, col + 1) instanceof Pawn) {
+                                        past = false
+                                    }
+                                }
+                            }
+                            if (col - 1 >= 0) {
+                                for (let i = 0; i < 8; i++) {
+                                    if (this.getPiece(i, col - 1) instanceof Pawn) {
+                                        past = false
+                                    }
+                                }
+                            }
+                            if (past) {
+                                piece.points+=30
+                            }
+                            let doubled = false
+                            for (let i = 0; i < 8; i++) {
+                                if (piece instanceof Pawn && i !== row) {
+                                    doubled = true
+                                }
+                            }
+                            if (doubled) {
+                                piece.points-=10
+                            }
                         }
                     }
                 }
@@ -1020,7 +1095,7 @@ const test = async (message) => {
             [-30,-40,-40,-50,-50,-40,-40,-30],
             [-30,-40,-40,-50,-50,-40,-40,-30],
         ]
-        whiteScoreEnd = [
+        static whiteScoreEnd = [
             [-50,-40,-30,-20,-20,-30,-40,-50],
             [-30,-20,-10,  0,  0,-10,-20,-30],
             [-30,-10, 20, 30, 30, 20,-10,-30],
@@ -1030,7 +1105,7 @@ const test = async (message) => {
             [-30,-30,  0,  0,  0,  0,-30,-30],
             [-50,-30,-30,-30,-30,-30,-30,-50]
         ]
-        blackScoreEnd = [
+        static blackScoreEnd = [
             [-50,-30,-30,-30,-30,-30,-30,-50],
             [-30,-30,  0,  0,  0,  0,-30,-30],
             [-30,-10, 20, 30, 30, 20,-10,-30],
@@ -1232,6 +1307,16 @@ const test = async (message) => {
             [5, 10, 10,-20,-20, 10, 10,  5],
             [0,  0,  0,  0,  0,  0,  0,  0]
         ]
+        static whiteScoreEnd = [
+            [100,  100,  100,  100,  100,  100,  100,  100],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [5,  5, 10, 25, 25, 10,  5,  5],
+            [0,  0,  0, 20, 20,  0,  0,  0],
+            [5, -5,-10,  0,  0,-10, -5,  5],
+            [5, 10, 10,-20,-20, 10, 10,  5],
+            [0,  0,  0,  0,  0,  0,  0,  0]
+        ]
         static blackScore = [
             [0,  0,  0,  0,  0,  0,  0,  0],
             [5, 10, 10,-40,-40, 10, 10,  5],
@@ -1241,6 +1326,16 @@ const test = async (message) => {
             [10, 10, 20, 30, 30, 20, 10, 10],
             [50, 50, 50, 50, 50, 50, 50, 50],
             [0,  0,  0,  0,  0,  0,  0,  0],
+        ]
+        static blackScoreEnd = [
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [5, 10, 10,-40,-40, 10, 10,  5],
+            [5, 10,20,  0,  0,-10, -5,  5],
+            [0,  0,  0, 20, 20,  0,  0,  0],
+            [5,  5, 10, 25, 25, 10,  5,  5],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [100,  100,  100,  100,  100,  100,  100,  100],
         ]
         constructor(colour, cell, moves) {
             super(colour, cell, moves)

@@ -49,19 +49,6 @@ const test = async (message) => {
         return colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
     }
 
-    const sortMoves = (a, b) => { // moves tend to be closer to the center
-        if (a.ate !== null && b.ate !== null) {
-            const aScore = a.piece.points - a.ate.points
-            const bScore = b.piece.points - b.ate.points
-            return aScore < bScore ? 1: -1
-        } else if (a.ate === null && b.ate === null) {
-            const distCtrA = a.newCell.col <= 3 ? 3 - a.newCell.col : a.newCell.col - 4
-            const distCtrB = b.newCell.col <= 3 ? 3 - b.newCell.col : b.newCell.col - 4
-            return distCtrA - distCtrB
-        }
-        return 0
-    }
-
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
@@ -88,7 +75,7 @@ const test = async (message) => {
             return [null, Number.MAX_VALUE]
         }
         const moves = testGameOver.allMoves
-        moves.sort(sortMovesQuiesce)
+        moves.sort(sortMoves)
         const randomIndex = Math.floor(Math.random() * (moves.length - 1))
         let bestMove = moves.length > 0 ? moves[randomIndex] : null
 
@@ -132,6 +119,18 @@ const test = async (message) => {
             const aScore = a.piece.points - a.ate.points
             const bScore = b.piece.points - b.ate.points
             return aScore < bScore ? 1: -1
+        } else if (a.ate !== null) {
+            return -1
+        } else if (b.ate !== null) {
+            return 1
+        }
+        return 0
+    }
+    const sortMoves = (a, b) => {
+        if (a.ate !== null && b.ate !== null) {
+            const aScore = a.piece.points - a.ate.points
+            const bScore = b.piece.points - b.ate.points
+            return aScore < bScore ? -1: 1
         } else if (a.ate !== null) {
             return -1
         } else if (b.ate !== null) {

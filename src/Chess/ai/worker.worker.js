@@ -53,7 +53,7 @@ const test = async (message) => {
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
             let result
-            if (maxPlayer === currentPlayer) {
+            if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
                 result = quiesce(alpha, beta, board, currentPlayer, 2)
             } else {
                 const boardHash = board.getBoardHash() + maxPlayer.toString()
@@ -161,7 +161,7 @@ const test = async (message) => {
 
         alpha = Math.max(alpha, evaluation)
         const moves = board.getAllMoves(colour)
-        moves.sort(sortMovesQuiesce)
+        moves.sort(sortMoves)
         for (const move of moves) {
             if (move.ate !== null && move.ate.points < move.piece.points) { //  && move.ate.points > move.piece.points
                 board.movePiece(move.piece, move)

@@ -53,16 +53,23 @@ const test = async (message) => {
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
             let result
-            if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
-                result = quiesce(alpha, beta, board, currentPlayer, 1)
+            // if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
+            //     result = quiesce(alpha, beta, board, currentPlayer, 1)
+            // } else {
+            //     const boardHash = board.getBoardHash() + maxPlayer.toString()
+            //     if (mem.has(boardHash)) {
+            //         result = mem.get(boardHash)
+            //     } else {
+            //         result = evaluate(board, maxPlayer)
+            //         mem.set(boardHash, result)
+            //     }
+            // }
+            const boardHash = board.getBoardHash() + maxPlayer.toString()
+            if (mem.has(boardHash)) {
+                result = mem.get(boardHash)
             } else {
-                const boardHash = board.getBoardHash() + maxPlayer.toString()
-                if (mem.has(boardHash)) {
-                    result = mem.get(boardHash)
-                } else {
-                    result = evaluate(board, maxPlayer)
-                    mem.set(boardHash, result)
-                }
+                result = evaluate(board, maxPlayer)
+                mem.set(boardHash, result)
             }
 
             return [null, result]

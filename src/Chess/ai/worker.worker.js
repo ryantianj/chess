@@ -54,7 +54,7 @@ const test = async (message) => {
             // const result = evaluate(board, maxPlayer)
             let result
             if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
-                result = quiesce(alpha, beta, board, currentPlayer, 2)
+                result = quiesce(alpha, beta, board, currentPlayer, 1)
             } else {
                 const boardHash = board.getBoardHash() + maxPlayer.toString()
                 if (mem.has(boardHash)) {

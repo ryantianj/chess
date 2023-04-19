@@ -135,12 +135,14 @@ const test = async (message) => {
             return -1
         } else if (b.ate !== null) {
             return 1
+        } else {
+            const aScore = a.piece.colour === Piece.WHITE ? a.piece.whiteScore[a.newCell.row][a.newCell.col] : a.piece.blackScore[a.newCell.row][a.newCell.col]
+            const bScore = b.piece.colour === Piece.WHITE ? b.piece.whiteScore[b.newCell.row][b.newCell.col] : b.piece.blackScore[b.newCell.row][b.newCell.col]
+            return aScore < bScore ? 1: -1
         }
-        return 0
     }
 
     const quiesce = (alpha, beta, board, colour, depth) => {
-        // const evaluation = evaluate(board, colour)
         let evaluation
         const boardHash = board.getBoardHash() + colour.toString()
         if (mem.has(boardHash)) {
@@ -161,7 +163,7 @@ const test = async (message) => {
         const moves = board.getAllMoves(colour)
         moves.sort(sortMovesQuiesce)
         for (const move of moves) {
-            if (move.ate !== null && move.ate.points > move.piece.points) { //  && move.ate.points > move.piece.points
+            if (move.ate !== null && move.ate.points < move.piece.points) { //  && move.ate.points > move.piece.points
                 board.movePiece(move.piece, move)
                 let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
                 board.undoMove()
@@ -279,11 +281,11 @@ const test = async (message) => {
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const piece = this.getPiece(row, col)
-                    if (piece !== null && piece.constructor.whiteScoreEnd !== undefined) {
+                    if (piece !== null && piece.whiteScoreEnd !== undefined) {
                         if (piece.colour === Piece.WHITE) {
-                            piece.constructor.whiteScore = piece.constructor.whiteScoreEnd
+                            piece.whiteScore = piece.whiteScoreEnd
                         } else {
-                            piece.constructor.blackScore = piece.constructor.blackScoreEnd
+                            piece.blackScore = piece.blackScoreEnd
                         }
                     }
                 }
@@ -746,9 +748,9 @@ const test = async (message) => {
 
                         // development / positional score
                         if (piece.colour === Piece.WHITE) {
-                            score += piece.constructor.whiteScore[row][col]
+                            score += piece.whiteScore[row][col]
                         } else {
-                            score -= piece.constructor.blackScore[row][col]
+                            score -= piece.blackScore[row][col]
                         }
 
                         // double pawns bad for ai, but good if he doubles opponent's pawn
@@ -933,7 +935,6 @@ const test = async (message) => {
         static KING = "k"
         static QUEEN = "q"
         static PAWN = "p"
-        isAlive = true
         constructor(colour, cell, moves= []) {
             this.colour = colour // white or black
             this.cell = cell
@@ -970,7 +971,7 @@ const test = async (message) => {
         directions = [[1,1], [-1,-1], [1,-1],[-1,1]]
         points = 330
         name = Piece.BISHOP
-        static whiteScore = [
+        whiteScore = [
             [-20,-10,-10,-10,-10,-10,-10,-20],
             [-10,  0,  0,  0,  0,  0,  0,-10],
             [-10,  0,  5, 10, 10,  5,  0,-10],
@@ -980,7 +981,7 @@ const test = async (message) => {
             [-10,  5,  0,  0,  0,  0,  5,-10],
             [-20,-10,-10,-10,-10,-10,-10,-20]
         ]
-        static blackScore = [
+        blackScore = [
             [-20,-10,-10,-10,-10,-10,-10,-20],
             [-10,  5,  0,  0,  0,  0,  5,-10],
             [-10, 10, 10, 10, 10, 10, 10,-10],
@@ -1073,7 +1074,7 @@ const test = async (message) => {
         name = Piece.KING
         points = 20000
 
-        static whiteScore = [
+        whiteScore = [
             [-30,-40,-40,-50,-50,-40,-40,-30],
             [-30,-40,-40,-50,-50,-40,-40,-30],
             [-30,-40,-40,-50,-50,-40,-40,-30],
@@ -1084,7 +1085,7 @@ const test = async (message) => {
             [20, 30, 10,  0,  0, 10, 30, 20]
         ]
 
-        static blackScore = [
+        blackScore = [
             [20, 30, 10,  0,  0, 10, 30, 20],
             [20, 20,  0,  0,  0,  0, 20, 20],
             [-10,-20,-20,-20,-20,-20,-20,-10],
@@ -1094,7 +1095,7 @@ const test = async (message) => {
             [-30,-40,-40,-50,-50,-40,-40,-30],
             [-30,-40,-40,-50,-50,-40,-40,-30],
         ]
-        static whiteScoreEnd = [
+        whiteScoreEnd = [
             [-50,-40,-30,-20,-20,-30,-40,-50],
             [-30,-20,-10,  0,  0,-10,-20,-30],
             [-30,-10, 20, 30, 30, 20,-10,-30],
@@ -1104,7 +1105,7 @@ const test = async (message) => {
             [-30,-30,  0,  0,  0,  0,-30,-30],
             [-50,-30,-30,-30,-30,-30,-30,-50]
         ]
-        static blackScoreEnd = [
+        blackScoreEnd = [
             [-50,-30,-30,-30,-30,-30,-30,-50],
             [-30,-30,  0,  0,  0,  0,-30,-30],
             [-30,-10, 20, 30, 30, 20,-10,-30],
@@ -1204,7 +1205,7 @@ const test = async (message) => {
         points = 320
         name = Piece.KNIGHT
 
-        static whiteScore = [
+        whiteScore = [
             [-50,-40,-30,-30,-30,-30,-40,-50],
             [-40,-20,  0,  0,  0,  0,-20,-40],
             [-30,  0, 10, 15, 15, 10,  0,-30],
@@ -1215,7 +1216,7 @@ const test = async (message) => {
             [-50,-40,-30,-30,-30,-30,-40,-50]
         ]
 
-        static blackScore = [
+        blackScore = [
             [-50,-40,-30,-30,-30,-30,-40,-50],
             [-40,-20,  0,  5,  5,  0,-20,-40],
             [-30,  5, 10, 15, 15, 10,  5,-30],
@@ -1296,7 +1297,7 @@ const test = async (message) => {
         points = 100
         name = Piece.PAWN
 
-        static whiteScore = [
+        whiteScore = [
             [0,  0,  0,  0,  0,  0,  0,  0],
             [50, 50, 50, 50, 50, 50, 50, 50],
             [10, 10, 20, 30, 30, 20, 10, 10],
@@ -1306,7 +1307,7 @@ const test = async (message) => {
             [5, 10, 10,-20,-20, 10, 10,  5],
             [0,  0,  0,  0,  0,  0,  0,  0]
         ]
-        static whiteScoreEnd = [
+        whiteScoreEnd = [
             [100,  100,  100,  100,  100,  100,  100,  100],
             [50, 50, 50, 50, 50, 50, 50, 50],
             [10, 10, 20, 30, 30, 20, 10, 10],
@@ -1316,7 +1317,7 @@ const test = async (message) => {
             [5, 10, 10,-20,-20, 10, 10,  5],
             [0,  0,  0,  0,  0,  0,  0,  0]
         ]
-        static blackScore = [
+        blackScore = [
             [0,  0,  0,  0,  0,  0,  0,  0],
             [5, 10, 10,-40,-40, 10, 10,  5],
             [5, 10,20,  0,  0,-10, -5,  5],
@@ -1326,7 +1327,7 @@ const test = async (message) => {
             [50, 50, 50, 50, 50, 50, 50, 50],
             [0,  0,  0,  0,  0,  0,  0,  0],
         ]
-        static blackScoreEnd = [
+        blackScoreEnd = [
             [0,  0,  0,  0,  0,  0,  0,  0],
             [5, 10, 10,-40,-40, 10, 10,  5],
             [5, 10,20,  0,  0,-10, -5,  5],
@@ -1474,7 +1475,7 @@ const test = async (message) => {
         points = 900
         name = Piece.QUEEN
 
-        static whiteScore = [
+        whiteScore = [
             [-20,-10,-10, -5, -5,-10,-10,-20],
             [-10,  0,  0,  0,  0,  0,  0,-10],
             [-10,  0,  5,  5,  5,  5,  0,-10],
@@ -1484,7 +1485,7 @@ const test = async (message) => {
             [-10,  0,  5,  0,  0,  0,  0,-10],
             [-20,-10,-10, -5, -5,-10,-10,-20]
         ]
-        static blackScore = [
+        blackScore = [
             [-20,-10,-10, -5, -5,-10,-10,-20],
             [-10,  0,  5,  0,  0,  0,  0,-10],
             [-10,  5,  5,  5,  5,  5,  0,-10],
@@ -1575,7 +1576,7 @@ const test = async (message) => {
         directions = [[0,1], [1,0], [0,-1],[-1,0]]
         points = 500
         name = Piece.ROOK
-        static whiteScore = [
+        whiteScore = [
             [0,  0,  0,  0,  0,  0,  0,  0],
             [5, 10, 10, 10, 10, 10, 10,  5],
             [-5,  0,  0,  0,  0,  0,  0, -5],
@@ -1585,7 +1586,7 @@ const test = async (message) => {
             [-5,  0,  0,  0,  0,  0,  0, -5],
             [0,  0,  0,  5,  5,  0,  0,  0]
         ]
-        static blackScore = [
+        blackScore = [
             [0,  0,  4,  5,  5,  10,  0,  0],
             [-5,  0,  0,  0,  0,  0,  0, -5],
             [-5,  0,  0,  0,  0,  0,  0, -5],

@@ -32,14 +32,25 @@ const Player = ({colour}) => {
             return ""
 
     }
+
+    const getCSS = (isLastPiece) => {
+        if (isLastPiece && chessCtx.game.board.moves.length > 0) {
+            const lastMove = chessCtx.game.board.moves.slice(-1)[0]
+            if (lastMove.ate !== null && lastMove.ate.colour !== colour) {
+                return "recentlyEatenPiece"
+            }
+        }
+        return "eatenPiece"
+    }
+    const eatenPieces = chessCtx.game.getEatenPieces(colour)
     return (
         <div style={playerStyle()} className="player">
             <div className="info">
                 <p>{chessCtx.ai && colour === chessCtx.aiColour ? "Stockfish's little brother v4"
                     : colour === Piece.BLACK ? "Black" : "White"}</p>
                 <div className="eatenPieces">
-                    {chessCtx.game.getEatenPieces(colour)
-                        .map((piece, i) => <img src={piece.image} alt={"piece"} key={i} className="eatenPiece"/>)}
+                    {eatenPieces
+                        .map((piece, i) => <img src={piece.image} alt={"piece"} key={i} className={getCSS(i === eatenPieces.length - 1)}/>)}
                     {getScore()}
                 </div>
             </div>

@@ -28,3 +28,9 @@
     width: 20px;
     height: 20px;
 }
+
+.recentlyEatenPiece {
+    width: 20px;
+    height: 20px;
+    background-color: lightblue;
+}

@@ -1,6 +1,7 @@
 let totalMoves = 0
 let isEndGame = false
 const test = async (message) => {
+    let nodes = 0
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
@@ -17,7 +18,7 @@ const test = async (message) => {
     const ab =  (boardString, depth, moveString, colour) => {
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        // const start = performance.now()
+        const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         isEndGame = copyBoard.isEndGame()
         if (isEndGame) {
@@ -28,8 +29,8 @@ const test = async (message) => {
         const mem = new Map()
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth, mem)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        // const end = performance.now()
-        // console.log(end - start, totalMoves)
+        const end = performance.now()
+        console.log(end - start, totalMoves, nodes)
         console.log("Score", result[1])
         return result[0] // should be a move
     }
@@ -43,6 +44,7 @@ const test = async (message) => {
     }
 
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth, mem) => {
+        nodes++
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
             let result
@@ -58,8 +60,9 @@ const test = async (message) => {
             //     }
             // }
             const boardHash = board.getBoardHash() + maxPlayer.toString()
-            if (mem.has(boardHash)) {
-                result = mem.get(boardHash)
+            const memGet = mem.get(boardHash)
+            if (memGet !== undefined) {
+                result = memGet
             } else {
                 result = evaluate(board, maxPlayer)
                 mem.set(boardHash, result)

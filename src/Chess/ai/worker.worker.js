@@ -1,7 +1,6 @@
 let totalMoves = 0
 let isEndGame = false
 const test = async (message) => {
-    let nodes = 0
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
@@ -13,12 +12,11 @@ const test = async (message) => {
     // for bishop, fianchetto bonus points, control over square colour (using pawns), bishop pair bonus
     // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
     // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
-    // sort a-b moves, closer to center === better, check first done
-
+    // let nodes = 0
     const ab =  (boardString, depth, moveString, colour) => {
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        const start = performance.now()
+        // const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         isEndGame = copyBoard.isEndGame()
         if (isEndGame) {
@@ -29,8 +27,8 @@ const test = async (message) => {
         const mem = new Map()
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth, mem)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        const end = performance.now()
-        console.log(end - start, totalMoves, nodes)
+        // const end = performance.now()
+        // console.log(end - start, totalMoves, nodes)
         console.log("Score", result[1])
         return result[0] // should be a move
     }
@@ -44,7 +42,7 @@ const test = async (message) => {
     }
 
     const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth, mem) => {
-        nodes++
+        // nodes++
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
             let result

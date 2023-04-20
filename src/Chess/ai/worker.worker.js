@@ -1,15 +1,9 @@
-import pawn from "../logic/Pieces/Pawn";
-
 let totalMoves = 0
-let mem = new Map()
 let isEndGame = false
 const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
-    if (true) {
-        mem = new Map()
-    }
     // console.log("mem", mem.size)
     // TODO: check if endgame before running search, set score tables before search, done after set board string
     // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
@@ -21,10 +15,9 @@ const test = async (message) => {
     // sort a-b moves, closer to center === better, check first done
 
     const ab =  (boardString, depth, moveString, colour) => {
-        totalMoves++
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        const start = performance.now()
+        // const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
         isEndGame = copyBoard.isEndGame()
         if (isEndGame) {
@@ -32,11 +25,11 @@ const test = async (message) => {
             copyBoard.setEndGame()
         }
         copyBoard.updatePieceValues()
-        console.log(copyBoard.board)
-        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth)
+        const mem = new Map()
+        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, true, colour, colour, depth, mem)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        const end = performance.now()
-        console.log(end - start, totalMoves)
+        // const end = performance.now()
+        // console.log(end - start, totalMoves)
         console.log("Score", result[1])
         return result[0] // should be a move
     }
@@ -49,7 +42,7 @@ const test = async (message) => {
         return colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
     }
 
-    const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth) => {
+    const miniMax = (board, depth, alpha, beta, isMax, maxPlayer, currentPlayer, orgDepth, mem) => {
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
             let result
@@ -90,7 +83,7 @@ const test = async (message) => {
             let maxEval = -Number.MAX_VALUE
             for (const move of moves) {
                 board.movePiece(move.piece, move)
-                const currentEval = miniMax(board, depth - 1, alpha, beta, false, maxPlayer, switchColour(currentPlayer), orgDepth)[1]
+                const currentEval = miniMax(board, depth - 1, alpha, beta, false, maxPlayer, switchColour(currentPlayer), orgDepth, mem)[1]
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
@@ -106,7 +99,7 @@ const test = async (message) => {
             let minEval = Number.MAX_VALUE
             for (const move of moves) {
                 board.movePiece(move.piece, move)
-                const currentEval = miniMax(board, depth - 1, alpha, beta, true, maxPlayer, switchColour(currentPlayer), orgDepth)[1]
+                const currentEval = miniMax(board, depth - 1, alpha, beta, true, maxPlayer, switchColour(currentPlayer), orgDepth, mem)[1]
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval
@@ -149,78 +142,78 @@ const test = async (message) => {
         }
     }
 
-    const quiesce = (alpha, beta, board, colour, depth) => {
-        let evaluation
-        const boardHash = board.getBoardHash() + colour.toString()
-        if (mem.has(boardHash)) {
-            evaluation = mem.get(boardHash)
-        } else {
-            evaluation = evaluate(board, colour)
-            mem.set(boardHash, evaluation)
-        }
-
-        if (depth === 0) {
-            return evaluation
-        }
-        if (evaluation >= beta) {
-            return beta
-        }
-
-        alpha = Math.max(alpha, evaluation)
-        const moves = board.getAllMoves(colour)
-        moves.sort(sortMoves)
-        for (const move of moves) {
-            if (move.ate !== null && move.ate.points < move.piece.points) { //  && move.ate.points > move.piece.points
-                board.movePiece(move.piece, move)
-                let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
-                board.undoMove()
-                if (score >= beta) {
-                    return beta
-                }
-                if (score > alpha) {
-                    alpha = score
-                }
-            }
-        }
-        return alpha
-    }
-
-    const quiesceOdd = (alpha, beta, board, colour, depth) => {
-        // const evaluation = evaluate(board, colour)
-        let evaluation
-        const boardHash = board.getBoardHash() + colour.toString()
-        if (mem.has(boardHash)) {
-            evaluation = mem.get(boardHash)
-        } else {
-            evaluation = evaluate(board, colour)
-            mem.set(boardHash, evaluation)
-        }
-
-        if (depth === 0) {
-            return evaluation
-        }
-        if (evaluation >= beta) {
-            return beta
-        }
-
-        alpha = Math.max(alpha, evaluation)
-        const moves = board.getAllMoves(colour)
-        moves.sort(sortMovesQuiesce)
-        for (const move of moves) {
-            if (move.ate !== null) { //  && move.ate.points > move.piece.points
-                board.movePiece(move.piece, move)
-                let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
-                board.undoMove()
-                if (score >= beta) {
-                    return beta
-                }
-                if (score > alpha) {
-                    alpha = score
-                }
-            }
-        }
-        return alpha
-    }
+    // const quiesce = (alpha, beta, board, colour, depth) => {
+    //     let evaluation
+    //     const boardHash = board.getBoardHash() + colour.toString()
+    //     if (mem.has(boardHash)) {
+    //         evaluation = mem.get(boardHash)
+    //     } else {
+    //         evaluation = evaluate(board, colour)
+    //         mem.set(boardHash, evaluation)
+    //     }
+    //
+    //     if (depth === 0) {
+    //         return evaluation
+    //     }
+    //     if (evaluation >= beta) {
+    //         return beta
+    //     }
+    //
+    //     alpha = Math.max(alpha, evaluation)
+    //     const moves = board.getAllMoves(colour)
+    //     moves.sort(sortMoves)
+    //     for (const move of moves) {
+    //         if (move.ate !== null && move.ate.points < move.piece.points) { //  && move.ate.points > move.piece.points
+    //             board.movePiece(move.piece, move)
+    //             let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
+    //             board.undoMove()
+    //             if (score >= beta) {
+    //                 return beta
+    //             }
+    //             if (score > alpha) {
+    //                 alpha = score
+    //             }
+    //         }
+    //     }
+    //     return alpha
+    // }
+    //
+    // const quiesceOdd = (alpha, beta, board, colour, depth) => {
+    //     // const evaluation = evaluate(board, colour)
+    //     let evaluation
+    //     const boardHash = board.getBoardHash() + colour.toString()
+    //     if (mem.has(boardHash)) {
+    //         evaluation = mem.get(boardHash)
+    //     } else {
+    //         evaluation = evaluate(board, colour)
+    //         mem.set(boardHash, evaluation)
+    //     }
+    //
+    //     if (depth === 0) {
+    //         return evaluation
+    //     }
+    //     if (evaluation >= beta) {
+    //         return beta
+    //     }
+    //
+    //     alpha = Math.max(alpha, evaluation)
+    //     const moves = board.getAllMoves(colour)
+    //     moves.sort(sortMovesQuiesce)
+    //     for (const move of moves) {
+    //         if (move.ate !== null) { //  && move.ate.points > move.piece.points
+    //             board.movePiece(move.piece, move)
+    //             let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
+    //             board.undoMove()
+    //             if (score >= beta) {
+    //                 return beta
+    //             }
+    //             if (score > alpha) {
+    //                 alpha = score
+    //             }
+    //         }
+    //     }
+    //     return alpha
+    // }
 
     const negaMax = (depth, board, colour, maxColour) => {
         if (depth === 0) {
@@ -1685,49 +1678,42 @@ const test = async (message) => {
 
         try {
             const data = message.data
-            if (data.newGame) {
-                totalMoves = 0
-                mem = new Map()
-            } else if (data.undo) {
-                totalMoves--
-                mem = new Map()
-            } else {
-                const boardString = data[0]
-                const depth = data[1]
-                const moveString = data[2]
-                const colour = data[3]
-                if (totalMoves === 0) {
-                    if (colour === Piece.WHITE) {
-                        // equal chance to play d4, e4
-                        const moves = [
-                            new Move(new Cell(6, 3), new Cell(4,3), new Pawn(Piece.WHITE, new Cell(6, 3))),
-                            new Move(new Cell(6, 4), new Cell(4,4), new Pawn(Piece.WHITE, new Cell(6, 4))),
-                        ]
-                        const randomIndex = Math.round(Math.random() * (moves.length - 1))
+            const boardString = data[0]
+            const depth = data[1]
+            const moveString = data[2]
+            const colour = data[3]
+            totalMoves = moveString.length
+            if (totalMoves === 0) {
+                if (colour === Piece.WHITE) {
+                    // equal chance to play d4, e4
+                    const moves = [
+                        new Move(new Cell(6, 3), new Cell(4,3), new Pawn(Piece.WHITE, new Cell(6, 3))),
+                        new Move(new Cell(6, 4), new Cell(4,4), new Pawn(Piece.WHITE, new Cell(6, 4))),
+                    ]
+                    const randomIndex = Math.round(Math.random() * (moves.length - 1))
 
-                        postMessage(moves[randomIndex].getMoveString())
-                    } else {
-                        // equal chance to play c5 / e5, in response to e4
-                        const getMove = moveString.map(x => Move.parseMove(undefined, x))[0]
-                        if (getMove.oldCell.row === 6 && getMove.oldCell.col === 4 && getMove.newCell.row === 4 && getMove.newCell.col === 4) {
-                            const moves = [
-                                new Move(new Cell(1, 2), new Cell(3,2), new Pawn(Piece.BLACK, new Cell(1, 2))),
-                                new Move(new Cell(1, 4), new Cell(3,4), new Pawn(Piece.BLACK, new Cell(1, 4))),
-                            ]
-                            const randomIndex = Math.round(Math.random() * (moves.length - 1))
+                    postMessage(moves[randomIndex].getMoveString())
+                }
+            } else if (totalMoves === 1) {
+                // equal chance to play c5 / e5, in response to e4
+                const getMove = moveString.map(x => Move.parseMove(undefined, x))[0]
+                if (getMove.oldCell.row === 6 && getMove.oldCell.col === 4 && getMove.newCell.row === 4 && getMove.newCell.col === 4) {
+                    const moves = [
+                        new Move(new Cell(1, 2), new Cell(3,2), new Pawn(Piece.BLACK, new Cell(1, 2))),
+                        new Move(new Cell(1, 4), new Cell(3,4), new Pawn(Piece.BLACK, new Cell(1, 4))),
+                    ]
+                    const randomIndex = Math.round(Math.random() * (moves.length - 1))
 
-                            postMessage(moves[randomIndex].getMoveString())
-                        } else {
-                            const nextMove = ab(boardString, depth, moveString, colour)
-                            postMessage(nextMove.getMoveString())
-                        }
-                    }
-                    totalMoves++
+                    postMessage(moves[randomIndex].getMoveString())
                 } else {
                     const nextMove = ab(boardString, depth, moveString, colour)
                     postMessage(nextMove.getMoveString())
                 }
+            } else {
+                const nextMove = ab(boardString, depth, moveString, colour)
+                postMessage(nextMove.getMoveString())
             }
+
 
         } catch (e) {
             postMessage({isError: true, message:"Error: " + e})

@@ -3,15 +3,8 @@ import Game from "./logic/Game";
 import Piece from "./logic/Piece";
 import Worker from "./ai/worker.worker";
 import Move from "./logic/Move";
-import Cell from "./logic/Cell";
-import Bishop from "./logic/Pieces/Bishop";
-import King from "./logic/Pieces/King";
-import Knight from "./logic/Pieces/Knight";
-import Pawn from "./logic/Pieces/Pawn";
-import Queen from "./logic/Pieces/Queen";
-import Rook from "./logic/Pieces/Rook";
 
-const myWorker = new Worker()
+let myWorker = new Worker()
 
 const ChessContext = React.createContext({
     game: null,
@@ -160,6 +153,8 @@ export const ChessContextProvider = (props) => {
                 } else {
                     const parseMove = Move.parseMove(game, data)
                     engineMove(parseMove)
+                    myWorker.terminate();
+                    myWorker = new Worker()
                 }
             }
         }
@@ -185,7 +180,8 @@ export const ChessContextProvider = (props) => {
             setSelectedPiece(null)
             isGameOver({isGameOver: false})
             isAI(false)
-            myWorker.postMessage({newGame: true})
+            myWorker.terminate();
+            myWorker = new Worker()
         }
     }
 
@@ -195,7 +191,6 @@ export const ChessContextProvider = (props) => {
                 if (game.board.moves.length > 1 && game.turnColour !== aiColour) {
                     game.undoMove()
                     game.undoMove()
-                    myWorker.postMessage({undo: true})
                 }
             } else {
                 game.undoMove()

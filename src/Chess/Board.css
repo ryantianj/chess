@@ -78,6 +78,14 @@
     background-color: yellow;
 }
 
+.from {
+    background-color: #f2ff00;
+}
+
+.ate {
+    background-color: red;
+}
+
 .tooltip {
     width: 300px;
     background-color: black;

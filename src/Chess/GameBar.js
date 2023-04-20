@@ -39,10 +39,10 @@ const GameBar = () => {
             {showButtons &&
                 <select value={chessCtx.depth}
                     onChange={(e) => chessCtx.setDepth(parseInt(e.target.value))}>
-                    <option value={2}>easiest</option>
-                    <option value={3}>easier</option>
-                <option value={4}>medium, qsearch</option>
-                    <option value={5}>medium, slow</option>
+                    <option value={2}>Depth 2</option>
+                    <option value={3}>Depth 3</option>
+                <option value={4}>Depth 4</option>
+                    <option value={5}>Depth 5</option>
             </select>}
         </div>
     )

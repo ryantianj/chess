@@ -35,7 +35,7 @@ const Player = ({colour}) => {
     return (
         <div style={playerStyle()} className="player">
             <div className="info">
-                <p>{chessCtx.ai && colour === chessCtx.aiColour ? "Stockfish's little brother v3"
+                <p>{chessCtx.ai && colour === chessCtx.aiColour ? "Stockfish's little brother v4"
                     : colour === Piece.BLACK ? "Black" : "White"}</p>
                 <div className="eatenPieces">
                     {chessCtx.game.getEatenPieces(colour)

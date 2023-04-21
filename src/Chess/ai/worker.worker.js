@@ -662,7 +662,9 @@ const test = async (message) => {
                 for (let col = 0; col < 8; col++) {
                     if (!this.isEmpty(row, col) && this.getPiece(row, col).colour !== colour) {
                         const piece = this.getPiece(row, col)
-                        return piece.isCheck(this, king)
+                        if (piece.isCheck(this, king)) {
+                            return true
+                        }
                     }
                 }
             }
@@ -1047,6 +1049,7 @@ const test = async (message) => {
                         if (board.getPiece(newRow, newCol).name === Piece.KING) {
                             return true
                         }
+                        break
                     }
                     newRow +=row
                     newCol +=col
@@ -1513,6 +1516,7 @@ const test = async (message) => {
                         if (board.getPiece(newRow, newCol).name === Piece.KING) {
                             return true
                         }
+                        break;
                     }
                     newRow +=row
                     newCol +=col
@@ -1620,6 +1624,7 @@ const test = async (message) => {
                         if (board.getPiece(newRow, newCol).name === Piece.KING) {
                             return true
                         }
+                        break
                     }
                     newRow +=row
                     newCol +=col

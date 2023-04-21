@@ -527,9 +527,8 @@ const test = async (message) => {
         }
 
         movePiece = (piece, move) => {
-            const result =  move.piece.movePiece(move, this)
+            move.piece.movePiece(move, this)
             this.moves.push(move)
-            return result
         }
 
         undoMove = () => {
@@ -982,9 +981,6 @@ const test = async (message) => {
             board[newRow][newCol] = this
             board[move.oldCell.row][move.oldCell.col] = null
             this.cell = new Cell(newRow, newCol)
-
-            return {row: newRow, col: newCol}
-
         }
 
         getString = () => {
@@ -1103,9 +1099,6 @@ const test = async (message) => {
             board[newRow][newCol] = this
             board[move.oldCell.row][move.oldCell.col] = null
             this.cell = new Cell(newRow, newCol)
-
-            return {row: newRow, col: newCol}
-
         }
 
         getString = () => {
@@ -1193,9 +1186,6 @@ const test = async (message) => {
             board[newRow][newCol] = this
             board[move.oldCell.row][move.oldCell.col] = null
             this.cell = new Cell(newRow, newCol)
-
-            return {row: newRow, col: newCol}
-
         }
 
         getString = () => {
@@ -1353,10 +1343,7 @@ const test = async (message) => {
             this.cell = new Cell(newRow, newCol)
             if (move.isPromotion) {
                 board[newRow][newCol] = new Queen(this.colour, this.cell)
-                return {promotion: true, row: newRow, col: newCol}
             }
-
-            return {row: newRow, col: newCol}
         }
 
         getString = () => {
@@ -1465,9 +1452,6 @@ const test = async (message) => {
             board[newRow][newCol] = this
             board[move.oldCell.row][move.oldCell.col] = null
             this.cell = new Cell(newRow, newCol)
-
-            return {row: newRow, col: newCol}
-
         }
 
         getString = () => {
@@ -1573,9 +1557,6 @@ const test = async (message) => {
             board[newRow][newCol] = this
             board[move.oldCell.row][move.oldCell.col] = null
             this.cell = new Cell(newRow, newCol)
-
-            return {row: newRow, col: newCol}
-
         }
 
         getString = () => {

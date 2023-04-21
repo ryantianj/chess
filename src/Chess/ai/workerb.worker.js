@@ -138,15 +138,15 @@ const test = async (message) => {
         if (a.ate !== null && b.ate !== null) {
             const aScore = a.piece.points - a.ate.points
             const bScore = b.piece.points - b.ate.points
-            return aScore < bScore ? -1: 1
+            return aScore < bScore ? 1: -1
         } else if (a.ate !== null) {
-            return -1
-        } else if (b.ate !== null) {
             return 1
+        } else if (b.ate !== null) {
+            return -1
         } else {
             const aScore = a.piece.colour === Piece.WHITE ? a.piece.whiteScore[a.newCell.row][a.newCell.col] : a.piece.blackScore[a.newCell.row][a.newCell.col]
             const bScore = b.piece.colour === Piece.WHITE ? b.piece.whiteScore[b.newCell.row][b.newCell.col] : b.piece.blackScore[b.newCell.row][b.newCell.col]
-            return aScore < bScore ? 1: -1
+            return aScore < bScore ? -1: 1
         }
     }
 

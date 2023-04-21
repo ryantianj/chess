@@ -2,9 +2,11 @@ import React, {useEffect, useState} from "react";
 import Game from "./logic/Game";
 import Piece from "./logic/Piece";
 import Worker from "./ai/worker.worker";
+import Workerb from "./ai/workerb.worker"
 import Move from "./logic/Move";
 
 let myWorker = new Worker()
+let myWorkerb = new Workerb()
 
 const ChessContext = React.createContext({
     game: null,
@@ -52,6 +54,7 @@ export const ChessContextProvider = (props) => {
             if (game.turnColour === aiColour) { // white ai to start
                 const moveString = game.board.moves.map(x => Move.getMoveString(x))
                 myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
+                myWorkerb.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
             }
             alert("Engine on")
         } else {
@@ -89,6 +92,7 @@ export const ChessContextProvider = (props) => {
     }
 
     const engineMove = (move) => {
+        console.log(move)
         if (gameOver.isGameOver) {
             return;
         }
@@ -135,6 +139,7 @@ export const ChessContextProvider = (props) => {
                 if (ai) {
                     const moveString = game.board.moves.map(x => Move.getMoveString(x))
                     myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
+                    myWorkerb.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
 
                 }
             }
@@ -146,6 +151,10 @@ export const ChessContextProvider = (props) => {
             alert("Engine error: " + ev.message)
         }
         myWorker.onmessage = (message) => {
+            myWorker.terminate();
+            myWorker = new Worker()
+            myWorkerb.terminate();
+            myWorkerb = new Workerb()
             if (message) {
                 const data = message.data
                 if (data.isError) {
@@ -153,8 +162,26 @@ export const ChessContextProvider = (props) => {
                 } else {
                     const parseMove = Move.parseMove(game, data)
                     engineMove(parseMove)
-                    myWorker.terminate();
-                    myWorker = new Worker()
+
+                }
+            }
+        }
+
+        myWorkerb.onerror = (ev) => {
+            alert("Engine error: " + ev.message)
+        }
+        myWorkerb.onmessage = (message) => {
+            myWorker.terminate();
+            myWorker = new Worker()
+            myWorkerb.terminate();
+            myWorkerb = new Workerb()
+            if (message) {
+                const data = message.data
+                if (data.isError) {
+                    alert("Engine error: " + data.message)
+                } else {
+                    const parseMove = Move.parseMove(game, data)
+                    engineMove(parseMove)
                 }
             }
         }
@@ -169,6 +196,7 @@ export const ChessContextProvider = (props) => {
         if (ai && game.turnColour === aiColour) {
             const moveString = game.board.moves.map(x => Move.getMoveString(x))
             myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
+            myWorkerb.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
         }
     }
 
@@ -182,6 +210,8 @@ export const ChessContextProvider = (props) => {
             isAI(false)
             myWorker.terminate();
             myWorker = new Worker()
+            myWorkerb.terminate();
+            myWorkerb = new Workerb()
         }
     }
 

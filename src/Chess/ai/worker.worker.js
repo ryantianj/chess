@@ -496,10 +496,7 @@ const test = async (message) => {
         }
 
         movePiece = (piece, move) => {
-            if (this.board[move.oldCell.row][move.oldCell.col] === null) {
-                console.log(this.getBoardString(), move.oldCell.row, move.oldCell.col, move.piece.name)
-            }
-            const result =  this.board[move.oldCell.row][move.oldCell.col].movePiece(move, this)
+            const result =  move.piece.movePiece(move, this)
             this.moves.push(move)
             return result
         }
@@ -910,7 +907,7 @@ const test = async (message) => {
             const kingRow = king.cell.row
             const kingCol = king.cell.col
             const rowDiff = Math.abs(row - kingRow)
-            const colDiff = Math.abs(row - kingCol)
+            const colDiff = Math.abs(col - kingCol)
             if (rowDiff !== colDiff) {
                 return false
             }
@@ -1041,7 +1038,7 @@ const test = async (message) => {
                 const row = this.colour === Piece.BLACK ? 0 : 7
                 const col = 2
                 moves.push(new Move(this.cell, new Cell(row, col), this, false,
-                    {isCastle: true, rook: new Move(new Cell(row, 7), new Cell(row, 5), board.getPiece(row, 7))}))
+                    {isCastle: true, rook: new Move(new Cell(row, 0), new Cell(row, 3), board.getPiece(row, 0))}))
             }
 
 
@@ -1140,7 +1137,7 @@ const test = async (message) => {
             const kingRow = king.cell.row
             const kingCol = king.cell.col
             const rowDiff = Math.abs(row - kingRow)
-            const colDiff = Math.abs(row - kingCol)
+            const colDiff = Math.abs(col - kingCol)
             if (rowDiff + colDiff !== 3) {
                 return false
             }
@@ -1391,7 +1388,7 @@ const test = async (message) => {
             const kingRow = king.cell.row
             const kingCol = king.cell.col
             const rowDiff = Math.abs(row - kingRow)
-            const colDiff = Math.abs(row - kingCol)
+            const colDiff = Math.abs(col - kingCol)
             if ((rowDiff !== colDiff) && kingCol !== col && kingRow !== row) {
                 return false
             }

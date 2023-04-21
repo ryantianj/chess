@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "/chess/static/css/main.95988eb1.css",
-    "main.js": "/chess/static/js/main.ae7bc028.js",
+    "main.js": "/chess/static/js/main.a897c7be.js",
     "static/js/787.497f1025.chunk.js": "/chess/static/js/787.497f1025.chunk.js",
     "static/js/workerb.worker.f1561927.worker.js": "/chess/static/js/workerb.worker.f1561927.worker.js",
     "static/js/worker.worker.8d852d17.worker.js": "/chess/static/js/worker.worker.8d852d17.worker.js",
     "index.html": "/chess/index.html",
     "main.95988eb1.css.map": "/chess/static/css/main.95988eb1.css.map",
-    "main.ae7bc028.js.map": "/chess/static/js/main.ae7bc028.js.map",
+    "main.a897c7be.js.map": "/chess/static/js/main.a897c7be.js.map",
     "787.497f1025.chunk.js.map": "/chess/static/js/787.497f1025.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.95988eb1.css",
-    "static/js/main.ae7bc028.js"
+    "static/js/main.a897c7be.js"
   ]
 }

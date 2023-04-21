@@ -31,6 +31,7 @@ const test = async (message) => {
         // console.log(end - start, totalMoves, nodes)
         // console.log("eval", nodes)
         console.log("Score", result[1])
+        mem.clear()
         return result[0] // should be a move
     }
 
@@ -49,14 +50,15 @@ const test = async (message) => {
             //         mem.set(boardHash, result)
             //     }
             // }
-            const boardHash = board.getBoardHash() + maxPlayer.toString()
-            const memGet = mem.get(boardHash)
-            if (memGet !== undefined) {
-                result = memGet
-            } else {
+            // const boardHash = board.getBoardHash() + maxPlayer.toString()
+            // const memGet = mem.get(boardHash)
+
+            // if (memGet !== undefined) {
+            //     result = memGet
+            // } else {
                 result = board.getScore(maxPlayer)
-                mem.set(boardHash, result)
-            }
+            //     mem.set(boardHash, result)
+            // }
             return [null, result]
         }
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming

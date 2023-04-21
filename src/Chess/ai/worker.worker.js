@@ -424,7 +424,7 @@ const test = async (message) => {
                 }
             }
             return ((countWhiteQueen <= 1 && countWhitePieces <=0) || (countBlackQueen <= 1  && countBlackPieces <=0))
-                || ((countWhitePieces <=2 && countWhiteQueen <= 0) || (countBlackPieces <=2  && countBlackQueen <= 0))
+                || ((countWhitePieces <=3 && countWhiteQueen <= 0) || (countBlackPieces <=3  && countBlackQueen <= 0))
         }
 
         setBoardString = (boardString) => {

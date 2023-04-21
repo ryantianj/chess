@@ -12,7 +12,7 @@ const test = async (message) => {
     // for bishop, fianchetto bonus points, control over square colour (using pawns), bishop pair bonus
     // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
     // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
-    let nodes = 0
+    // let nodes = 0
     const ab =  (boardString, depth, moveString, colour) => {
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
@@ -23,19 +23,18 @@ const test = async (message) => {
             console.log("endgame")
             copyBoard.setEndGame()
         }
-        copyBoard.updatePieceValues()
+        copyBoard.updatePieceValues(totalMoves)
         const mem = new Map()
         const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, depth, mem)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
         // const end = performance.now()
         // console.log(end - start, totalMoves, nodes)
-        console.log("eval", nodes)
+        // console.log("eval", nodes)
         console.log("Score", result[1])
         return result[0] // should be a move
     }
 
     const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer, orgDepth, mem) => {
-        // nodes++
         if (depth === 0) {
             // const result = evaluate(board, maxPlayer)
             let result
@@ -60,13 +59,9 @@ const test = async (message) => {
             }
             return [null, result]
         }
-        const start = performance.now()
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
-        const end = performance.now()
-        nodes += end - start
         moves.sort(sortMoves)
-        const randomIndex = Math.floor(Math.random() * (moves.length - 1))
-        let bestMove = moves.length > 0 ? moves[randomIndex] : null
+        let bestMove;
 
         if (currentPlayer === maxPlayer) {
             let maxEval = -90000
@@ -77,6 +72,9 @@ const test = async (message) => {
                     illegal++
                     board.undoMove()
                     continue
+                }
+                if (bestMove === undefined) {
+                    bestMove = move
                 }
                 const currentEval = miniMax(board, depth - 1, alpha, beta, maxPlayer, currentPlayer === Piece.BLACK ? Piece.WHITE : Piece.BLACK, orgDepth, mem)[1]
                 board.undoMove()
@@ -102,6 +100,9 @@ const test = async (message) => {
                     illegal++
                     board.undoMove()
                     continue
+                }
+                if (bestMove === undefined) {
+                    bestMove = move
                 }
                 const currentEval = miniMax(board, depth - 1, alpha, beta, maxPlayer, currentPlayer === Piece.BLACK ? Piece.WHITE : Piece.BLACK, orgDepth, mem)[1]
                 board.undoMove()
@@ -299,11 +300,13 @@ const test = async (message) => {
             }
         }
         // update values of pieces
-        updatePieceValues = () => {
+        updatePieceValues = (totalMoves) => {
+            const MOVE_THRESHOLD = 10
             // for knight, -5 per missing pawn of any colour done
             // for bishop, fianchetto bonus points, control over square colour (using pawns), bishop pair bonus
             // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
             // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
+
             let whitePawnCount = 0
             let blackPawnCount = 0
             for (let row = 0; row < 8; row++) {
@@ -320,15 +323,43 @@ const test = async (message) => {
                     }
                 }
             }
+            // first ten moves, bad to move queen out, and encourage piece development
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const piece = this.getPiece(row, col)
                     if (piece !== null) {
+                        if (piece instanceof Queen) {
+                            if (totalMoves <= MOVE_THRESHOLD) {
+                                if (piece.colour === Piece.WHITE) {
+                                    piece.whiteScore[7][3]+=50
+                                } else {
+                                    piece.blackScore[0][3]+=50
+                                }
+                            }
+                        }
                         if (piece instanceof Knight) {
                             piece.points-= ((16 - whitePawnCount - blackPawnCount) * 3)
+                            if (totalMoves <= MOVE_THRESHOLD) {
+                                if (piece.colour === Piece.WHITE) {
+                                    piece.whiteScore[7][1]-=50
+                                    piece.whiteScore[7][6]-=50
+                                } else {
+                                    piece.blackScore[0][1]-=50
+                                    piece.blackScore[0][6]-=50
+                                }
+                            }
                         }
                         if (piece instanceof Bishop) {
                             piece.points+= ((16 - whitePawnCount - blackPawnCount) * 3)
+                            if (totalMoves <= MOVE_THRESHOLD) {
+                                if (piece.colour === Piece.WHITE) {
+                                    piece.whiteScore[7][2]-=50
+                                    piece.whiteScore[7][5]-=50
+                                } else {
+                                    piece.blackScore[0][2]-=50
+                                    piece.blackScore[0][5]-=50
+                                }
+                            }
                         }
                         if (piece instanceof Rook) {
                             piece.points+= ((16 - whitePawnCount - blackPawnCount) * 3)
@@ -506,7 +537,11 @@ const test = async (message) => {
                 const move = this.moves.pop()
                 const prevRow = move.oldCell.row
                 const prevCol = move.oldCell.col
-                const piece = move.piece
+                const piece = this.board[move.newCell.row][move.newCell.col]
+                if (piece === null) {
+                    console.log(this.getBoardString(), move)
+                }
+
                 this.board[prevRow][prevCol] = piece
                 piece.cell.row = prevRow
                 piece.cell.col = prevCol
@@ -580,9 +615,9 @@ const test = async (message) => {
                     }
                 }
             }
-            if (kingCount < 2) {
-                return true
-            }
+            // if (kingCount < 2) {
+            //     return true
+            // }
             if (move.isCastle) {
                 const moves = this.getAllMoves(colour * -1)
                 const row = move.newCell.row
@@ -881,15 +916,15 @@ const test = async (message) => {
          */
         getMoves = (board) => {
             const moves = []
+            const currentRow = this.cell.row
+            const currentCol = this.cell.col
             for (const direction of this.directions) {
-                const currentRow = this.cell.row
-                const currentCol = this.cell.col
                 const row = direction[0]
                 const col = direction[1]
                 let newRow = row + currentRow
                 let newCol = col + currentCol
                 while (board.canMove(newRow, newCol) || board.canEat(newRow, newCol, this.colour)) {
-                    const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                    const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this)
                     moves.push(move)
                     if (board.canEat(newRow, newCol, this.colour)) {
                         break
@@ -911,9 +946,9 @@ const test = async (message) => {
             if (rowDiff !== colDiff) {
                 return false
             }
+            const currentRow = this.cell.row
+            const currentCol = this.cell.col
             for (const direction of this.directions) {
-                const currentRow = this.cell.row
-                const currentCol = this.cell.col
                 const row = direction[0]
                 const col = direction[1]
                 let newRow = row + currentRow
@@ -962,7 +997,7 @@ const test = async (message) => {
         static KING_SIDE = -1
         static QUEEN_SIDE = 1
         name = Piece.KING
-        points = 10000
+        points = 90001
 
         whiteScore = [
             [-30,-40,-40,-50,-50,-40,-40,-30],
@@ -1015,15 +1050,15 @@ const test = async (message) => {
          */
         getMoves = (board) => {
             const moves = []
+            const currentRow = this.cell.row
+            const currentCol = this.cell.col
             for (const direction of this.directions) {
                 const row = direction[0]
                 const col = direction[1]
-                const currentRow = this.cell.row
-                const currentCol = this.cell.col
                 const newRow = row + currentRow
                 const newCol = col + currentCol
                 if (((board.canEat(newRow, newCol, this.colour) || board.canMove(newRow, newCol))) && board.canKingMove(newRow, newCol, this.colour)) {
-                    const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                    const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this)
                     moves.push(move)
                 }
             }
@@ -1031,13 +1066,13 @@ const test = async (message) => {
             if (board.castlingSquaresIsEmpty(this.colour, King.KING_SIDE) && !board.rookHasMoved(this.colour, King.KING_SIDE) && !board.kingHasMoved(this.colour)) {
                 const row = this.colour === Piece.BLACK ? 0 : 7
                 const col = 6
-                moves.push(new Move(this.cell, new Cell(row, col), this, false,
+                moves.push(new Move(new Cell(currentRow, currentCol), new Cell(row, col), this, false,
                     {isCastle: true, rook: new Move(new Cell(row, 7), new Cell(row, 5), board.getPiece(row, 7))}))
             }
             if (board.castlingSquaresIsEmpty(this.colour, King.QUEEN_SIDE) && !board.rookHasMoved(this.colour, King.QUEEN_SIDE) && !board.kingHasMoved(this.colour)) {
                 const row = this.colour === Piece.BLACK ? 0 : 7
                 const col = 2
-                moves.push(new Move(this.cell, new Cell(row, col), this, false,
+                moves.push(new Move(new Cell(currentRow, currentCol), new Cell(row, col), this, false,
                     {isCastle: true, rook: new Move(new Cell(row, 0), new Cell(row, 3), board.getPiece(row, 0))}))
             }
 
@@ -1124,7 +1159,7 @@ const test = async (message) => {
                 const newRow = row + currentRow
                 const newCol = col + currentCol
                 if (board.canEat(newRow, newCol, this.colour) || board.canMove(newRow, newCol)) {
-                    const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                    const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this)
                     moves.push(move)
                 }
             }
@@ -1222,11 +1257,13 @@ const test = async (message) => {
          * @param board chess board, object
          */
         getMoves = (board) => {
+            const currentRow = this.cell.row
+            const currentCol = this.cell.col
             const moves = []
             let newRow = this.cell.row + 1 * this.colour
             let newCol = this.cell.col
             if (board.canMove(newRow, newCol)) {
-                const move = new Move(this.cell, new Cell(newRow, newCol),
+                const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol),
                     this, undefined, undefined, undefined,
                     newRow === 0 || newRow === 7)
                     moves.push(move)
@@ -1234,12 +1271,12 @@ const test = async (message) => {
                 newRow = this.cell.row + 2 * this.colour
                 if (board.canMove(newRow, newCol) && (newRow === 3 || newRow === 4)) {
                     if (this.colour === Piece.BLACK && this.cell.row === 1) {
-                        const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                        const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this)
 
                             moves.push(move)
 
                     } else if (this.colour === Piece.WHITE && this.cell.row === 6) {
-                        const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                        const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this)
                             moves.push(move)
                     }
 
@@ -1248,7 +1285,7 @@ const test = async (message) => {
             newRow = this.cell.row + 1 * this.colour
             newCol = this.cell.col + 1
             if (board.canEat(newRow, newCol, this.colour)) {
-                const move = new Move(this.cell, new Cell(newRow, newCol), this , undefined, undefined, board.getPiece(newRow, newCol),
+                const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this , undefined, undefined, board.getPiece(newRow, newCol),
                     newRow === 0 || newRow === 7)
                     moves.push(move)
             }
@@ -1257,7 +1294,7 @@ const test = async (message) => {
                 const prevMove = board.moves.slice(-1)[0]
                 if (prevMove.piece.name === Piece.PAWN && prevMove.newCell.row === this.cell.row && prevMove.newCell.col === this.cell.col + 1
                     && Math.abs(prevMove.newCell.row - prevMove.oldCell.row) === 2) {
-                    const move = new Move(this.cell, new Cell(newRow, newCol), this, true)
+                    const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this, true)
                         moves.push(move)
                 }
 
@@ -1265,7 +1302,7 @@ const test = async (message) => {
             newRow = this.cell.row + 1 * this.colour
             newCol = this.cell.col - 1
             if (board.canEat(newRow, newCol, this.colour)) {
-                const move = new Move(this.cell, new Cell(newRow, newCol), this , undefined, undefined, board.getPiece(newRow, newCol),
+                const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this , undefined, undefined, board.getPiece(newRow, newCol),
                     newRow === 0 || newRow === 7)
                     moves.push(move)
             }
@@ -1274,7 +1311,7 @@ const test = async (message) => {
                 const prevMove = board.moves.slice(-1)[0]
                 if (prevMove.piece.name === Piece.PAWN && prevMove.newCell.row === this.cell.row && prevMove.newCell.col === this.cell.col - 1
                     && Math.abs(prevMove.newCell.row - prevMove.oldCell.row) === 2) {
-                    const move = new Move(this.cell, new Cell(newRow, newCol), this, true)
+                    const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this, true)
                     moves.push(move)
                 }
 
@@ -1371,7 +1408,7 @@ const test = async (message) => {
                 let newRow = row + currentRow
                 let newCol = col + currentCol
                 while (board.canMove(newRow, newCol) || board.canEat(newRow, newCol, this.colour)) {
-                    const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                    const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this)
                         moves.push(move)
                     if (board.canEat(newRow, newCol, this.colour)) {
                         break
@@ -1392,9 +1429,9 @@ const test = async (message) => {
             if ((rowDiff !== colDiff) && kingCol !== col && kingRow !== row) {
                 return false
             }
+            const currentRow = this.cell.row
+            const currentCol = this.cell.col
             for (const direction of this.directions) {
-                const currentRow = this.cell.row
-                const currentCol = this.cell.col
                 const row = direction[0]
                 const col = direction[1]
                 let newRow = row + currentRow
@@ -1481,7 +1518,7 @@ const test = async (message) => {
                 let newRow = row + currentRow
                 let newCol = col + currentCol
                 while (board.canMove(newRow, newCol) || board.canEat(newRow, newCol, this.colour)) {
-                    const move = new Move(this.cell, new Cell(newRow, newCol), this)
+                    const move = new Move(new Cell(currentRow, currentCol), new Cell(newRow, newCol), this)
                         moves.push(move)
                     if (board.canEat(newRow, newCol, this.colour)) {
                         break
@@ -1547,7 +1584,7 @@ const test = async (message) => {
         }
     }
 
-        // try {
+        try {
             const data = message.data
             const boardString = data[0]
             const depth = data[1]
@@ -1584,11 +1621,9 @@ const test = async (message) => {
                 const nextMove = ab(boardString, depth, moveString, colour)
                 postMessage(nextMove.getMoveString())
             }
-
-
-        // } catch (e) {
-        //     postMessage({isError: true, message:"Error: " + e})
-        // }
+        } catch (e) {
+            postMessage({isError: true, message:"Error: " + e})
+        }
 
 }
 // eslint-disable-next-line no-restricted-globals,no-undef

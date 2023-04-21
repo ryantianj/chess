@@ -30,6 +30,16 @@ const testCase = [
     [null, null, null, null, new Rook(Piece.WHITE, new Cell(7,4)), null, null, new King(Piece.WHITE, new Cell(7,7))]
 ]
 
+const testCase1 = [
+    [null, null, new Bishop(Piece.BLACK, new Cell(0, 2)), null, new Rook(Piece.BLACK, new Cell(0, 4)), new King(Piece.BLACK, new Cell(0, 5)), null, null],
+    [null, null, null, new Rook(Piece.BLACK, new Cell(1,3)), null, new Pawn(Piece.BLACK, new Cell(1,5)), null, null],
+    [new Pawn(Piece.BLACK, new Cell(2,0)), null, new Pawn(Piece.BLACK, new Cell(2,2)), null, null, new Queen(Piece.WHITE, new Cell(2,5)), null, null],
+    [null, null, null, null, new Pawn(Piece.BLACK, new Cell(3,4)), null, null, null],
+    [null, null, null, null, new Pawn(Piece.WHITE, new Cell(4,4)), null, null, null],
+    [null, null, null, null, null, new Rook(Piece.WHITE, new Cell(5,5)), null, null],
+    [null, new Pawn(Piece.WHITE, new Cell(6,1)), new Pawn(Piece.WHITE, new Cell(6,2)), null, null, new Pawn(Piece.WHITE, new Cell(6,5)), new Pawn(Piece.WHITE, new Cell(6,6)), new Pawn(Piece.WHITE, new Cell(6,7))],
+    [null, null, null, null, null, new Rook(Piece.WHITE, new Cell(7,5)), new King(Piece.WHITE, new Cell(7,6)), null],]
+
 class Board {
     #board;
 

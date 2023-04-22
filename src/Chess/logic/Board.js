@@ -21,7 +21,7 @@ const testCase = [
 
 const drawCase = [
     [null, null, null, null, null, null, null, null],
-    [null, new Pawn(Piece.BLACK, new Cell(1,1)),  new Pawn(Piece.BLACK, new Cell(1,2)), null, null, null,  new Pawn(Piece.BLACK, new Cell(1,6)), null],
+    [new Pawn(Piece.WHITE, new Cell(1,0)), new Pawn(Piece.BLACK, new Cell(1,1)),  new Pawn(Piece.BLACK, new Cell(1,2)), null, null, null,  new Pawn(Piece.BLACK, new Cell(1,6)), null],
     [ new Pawn(Piece.BLACK, new Cell(2,0)), null, null, null, null, null,  new Pawn(Piece.BLACK, new Cell(2,6)), null],
     [null, null, null, new Rook(Piece.WHITE, new Cell(3,3)), null, null, null, null],
     [null, null, null, null, null, new King(Piece.BLACK, new Cell(4,5)), null, null],
@@ -160,6 +160,7 @@ class Board {
 
     movePiece = (piece, move) => {
         const result =  this.#board[piece.cell.row][piece.cell.col].movePiece(move, this)
+        move.isCheck = this.isCheck(move.piece.colour * -1)
         this.moves.push(move)
         return result
     }
@@ -251,6 +252,7 @@ class Board {
         const row = piece.cell.row
         const col = piece.cell.col
         this.#board[row][col] = piece
+        this.moves[this.moves.length - 1].promotionPiece = piece
     }
 
     // returns if colour is under check

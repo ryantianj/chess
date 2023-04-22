@@ -51,7 +51,7 @@ const test = async (message) => {
                 if (bestMove === undefined) {
                     bestMove = move
                 }
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves)
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
@@ -83,7 +83,7 @@ const test = async (message) => {
                 if (bestMove === undefined) {
                     bestMove = move
                 }
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves)
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval
@@ -104,13 +104,13 @@ const test = async (message) => {
             return [bestMove, minEval]
         }
     }
-    const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
+    const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer, prevMoves) => {
         if (depth === 0) {
             let result
             if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
-                result = quiesce(alpha, beta, board, currentPlayer, 1)
+                result = quiesce(alpha, beta, board, currentPlayer, 1, prevMoves)
             } else {
-                result = board.getScore(maxPlayer)
+                result = board.getScore(maxPlayer, prevMoves)
             }
             return result
         }
@@ -127,7 +127,7 @@ const test = async (message) => {
                     illegal++
                     continue
                 }
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves)
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
@@ -158,7 +158,7 @@ const test = async (message) => {
                     continue
                 }
 
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves)
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval
@@ -212,8 +212,8 @@ const test = async (message) => {
         }
     }
 
-    const quiesce = (alpha, beta, board, colour, depth) => {
-        const evaluation = board.getScore(colour)
+    const quiesce = (alpha, beta, board, colour, depth, prevMoves) => {
+        const evaluation = board.getScore(colour, prevMoves)
         if (depth === 0) {
             return evaluation
         }
@@ -228,7 +228,7 @@ const test = async (message) => {
             const move = moves[i]
             if (move.ate !== null) { //  && move.ate.points > move.piece.points
                 board.movePiece(move.piece, move)
-                let score = -quiesce(-beta, -alpha, board, colour * -1, depth - 1)
+                let score = -quiesce(-beta, -alpha, board, colour * -1, depth - 1, prevMoves)
                 board.undoMove()
                 if (score >= beta) {
                     return beta
@@ -358,7 +358,7 @@ const test = async (message) => {
         }
         // update values of pieces
         updatePieceValues = (totalMoves) => {
-            const MOVE_THRESHOLD = 10
+            const MOVE_THRESHOLD = 12
             // for knight, -5 per missing pawn of any colour done
             // for bishop, fianchetto bonus points, control over square colour (using pawns), bishop pair bonus
             // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
@@ -380,6 +380,23 @@ const test = async (message) => {
                     }
                 }
             }
+            const openFiles = []
+            for (let col = 0; col < 8; col++) {
+                let hasPawn = false
+                for (let row = 0; row < 8; row++) {
+                    const piece = this.getPiece(row, col)
+                    if (piece !== null) {
+                        if (piece instanceof Pawn) {
+                            hasPawn = true
+                            break
+                        }
+                    }
+                }
+                if (!hasPawn) {
+                    openFiles.push(col)
+                }
+            }
+
             // first ten moves, bad to move queen out, and encourage piece development
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
@@ -420,6 +437,12 @@ const test = async (message) => {
                         }
                         if (piece instanceof Rook) {
                             piece.points+= ((16 - whitePawnCount - blackPawnCount) * 3)
+                            for (const openCol of openFiles) {
+                                for (let openRow = 0; openRow<8; openRow++) {
+                                    piece.whiteScore[openRow][openCol]+= 15
+                                    piece.blackScore[openRow][openCol]+= 15
+                                }
+                            }
                         }
                         if (piece instanceof Pawn) {
                             let past = true
@@ -438,7 +461,12 @@ const test = async (message) => {
                                 }
                             }
                             if (past) {
-                                piece.points+=30
+                                if (piece.colour === Piece.WHITE) {
+                                    piece.points+= (20 * (6 - row))
+                                } else {
+                                    piece.points+= (20 * (row - 1))
+                                }
+
                             }
                             let doubled = false
                             for (let i = 0; i < 8; i++) {
@@ -480,7 +508,7 @@ const test = async (message) => {
                     }
                 }
             }
-            return ((countWhiteQueen <= 1 && countWhitePieces <=0) || (countBlackQueen <= 1  && countBlackPieces <=0))
+            return ((countWhiteQueen <= 1 && countWhitePieces <=1) || (countBlackQueen <= 1  && countBlackPieces <=1))
                 || ((countWhitePieces <=3 && countWhiteQueen <= 0) || (countBlackPieces <=3  && countBlackQueen <= 0))
         }
 
@@ -620,7 +648,8 @@ const test = async (message) => {
         }
 
         kingHasMoved = (colour) => {
-            for (const move of this.moves) {
+            for (let i = 0; i < this.moves.length; i++) {
+                const move = this.moves[i]
                 if (move.piece.name === Piece.KING && move.piece.colour === colour) {
                     return true
                 }
@@ -760,24 +789,12 @@ const test = async (message) => {
                 for (let col = 0; col < 8; col++) {
                     const piece = this.getPiece(row, col)
                     if (piece !== null) {
+                        // material score
                         if (piece.colour === Piece.WHITE) {
                             materialScore += piece.points
                         } else {
                             materialScore -= piece.points
                         }
-                        // const moves = piece.getMoves(this)
-                        // //board control
-                        // score += moves.length
-                        // // piece mobility
-                        // if (piece instanceof Bishop) {
-                        //     score += (moves.length * 3)
-                        // } else if (piece instanceof Knight) {
-                        //     score += (moves.length * 3)
-                        // } else if (piece instanceof Queen) {
-                        //     score += (moves.length * 6)
-                        // } else if (piece instanceof Rook) {
-                        //     score += (moves.length * 5)
-                        // }
 
                         // development / positional score
                         if (piece.colour === Piece.WHITE) {
@@ -785,46 +802,22 @@ const test = async (message) => {
                         } else {
                             score -= piece.blackScore[row][col]
                         }
-
-                        // double pawns bad for ai, but good if he doubles opponent's pawn
-                        // if (piece.name === Piece.PAWN && piece.colour === Piece.WHITE) {
-                        //     if (!this.isEmpty(row + 1, col) && this.getPiece(row + 1, col).name === Piece.PAWN && piece.colour === Piece.WHITE) {
-                        //         score -= 20
-                        //     }
-                        // } else if (piece.name === Piece.PAWN && piece.colour !== Piece.WHITE) {
-                        //     if (!this.isEmpty(row - 1, col) && this.getPiece(row - 1, col).name === Piece.PAWN && piece.colour !== Piece.WHITE) {
-                        //         score += 20
-                        //     }
-                        // }
-                        // under check == bad, check opponent == good
-                        // if (piece.name === Piece.KING && piece.colour === colour) {
-                        //     if (this.isCheck(colour, attacked)) {
-                        //         score -= 10
-                        //     }
-                        // }
-                        // else if (piece instanceof King && piece.colour === opponentColour) {
-                        //     if (this.isCheck(opponentColour, attacked)) {
-                        //         score += 10
-                        //     }
-                        // }
                     }
                 }
             }
-            // if (this.board[3][4] instanceof Pawn && this.board[3][4].colour === Piece.WHITE
-            // && this.board) {
-            //     console.log(this.board)
-            // }
+
             return score + materialScore
         }
 
         /**
          * used for minimax heuristics
          * @param colour colour making the next move
+         * @param prevMoves total moves available
          * @return {number} score of position
          */
-        getScore = (colour) => {
+        getScore = (colour, prevMoves) => {
             const positionalScore = this.scanSquaresScore()
-            return (positionalScore) * colour * -1
+            return (positionalScore + prevMoves.length * 5) * colour * -1
         }
 
         getBoardString = () => {

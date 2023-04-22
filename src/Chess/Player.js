@@ -9,7 +9,7 @@ const Player = ({colour}) => {
 
     const playerStyle = () => {
         if (chessCtx.game.turnColour === colour) {
-            return {backgroundColor: "lightgreen"}
+            return {backgroundColor: "blue"}
         }
     }
     const getScore = () => {

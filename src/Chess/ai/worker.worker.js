@@ -1,10 +1,9 @@
 let totalMoves = 0
-let isEndGame = false
 const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
-    // console.log("mem", mem.size)
+    // https://stackoverflow.com/questions/16500739/chess-high-branching-factor
     // TODO: check if endgame before running search, set score tables before search, done after set board string
     // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
     // TODO: update piece score tables based on position before running search, done after set board string
@@ -12,73 +11,47 @@ const test = async (message) => {
     // for bishop, fianchetto bonus points, control over square colour (using pawns), bishop pair bonus
     // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
     // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
-    // let nodes = 0
+
     const ab =  (boardString, depth, moveString, colour) => {
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
         // const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
-        isEndGame = copyBoard.isEndGame()
+        const isEndGame = copyBoard.isEndGame()
         if (isEndGame) {
             console.log("endgame")
             copyBoard.setEndGame()
         }
         copyBoard.updatePieceValues(totalMoves)
-        const mem = new Map()
-        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, depth, mem)
+        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
         // const end = performance.now()
         // console.log(end - start, totalMoves, nodes)
         // console.log("eval", nodes)
         console.log("Score", result[1])
-        mem.clear()
         return result[0] // should be a move
     }
 
-    const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer, orgDepth, mem) => {
-        if (depth === 0) {
-            // const result = evaluate(board, maxPlayer)
-            let result
-            // if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
-            //     result = quiesce(alpha, beta, board, currentPlayer, 1)
-            // } else {
-            //     const boardHash = board.getBoardHash() + maxPlayer.toString()
-            //     if (mem.has(boardHash)) {
-            //         result = mem.get(boardHash)
-            //     } else {
-            //         result = evaluate(board, maxPlayer)
-            //         mem.set(boardHash, result)
-            //     }
-            // }
-            // const boardHash = board.getBoardHash() + maxPlayer.toString()
-            // const memGet = mem.get(boardHash)
-
-            // if (memGet !== undefined) {
-            //     result = memGet
-            // } else {
-                result = board.getScore(maxPlayer)
-            //     mem.set(boardHash, result)
-            // }
-            return [null, result]
-        }
+    const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
         moves.sort(sortMoves)
         let bestMove;
-
         if (currentPlayer === maxPlayer) {
             let maxEval = -90000
             let illegal = 0
-            for (const move of moves) {
+            for (let i = 0; i < moves.length; i++) {
+                const move = moves[i]
                 board.movePiece(move.piece, move)
                 if (board.isIllegal(currentPlayer, move)) {
-                    illegal++
                     board.undoMove()
+                    illegal++
                     continue
                 }
+
                 if (bestMove === undefined) {
                     bestMove = move
                 }
-                const currentEval = miniMax(board, depth - 1, alpha, beta, maxPlayer, currentPlayer === Piece.BLACK ? Piece.WHITE : Piece.BLACK, orgDepth, mem)[1]
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1)
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
@@ -90,23 +63,27 @@ const test = async (message) => {
                 }
             }
             if (illegal === moves.length) { // TODO: check stalemate
-                return [null, -90000]
+                if (board.isCheck(currentPlayer)) {
+                    return [null, -90000]
+                }
+                return [null, 0]
             }
             return [bestMove, maxEval]
         } else {
             let minEval = 90000
             let illegal = 0
-            for (const move of moves) {
+            for (let i = 0; i < moves.length; i++) {
+                const move = moves[i]
                 board.movePiece(move.piece, move)
                 if (board.isIllegal(currentPlayer, move)) {
-                    illegal++
                     board.undoMove()
+                    illegal++
                     continue
                 }
                 if (bestMove === undefined) {
                     bestMove = move
                 }
-                const currentEval = miniMax(board, depth - 1, alpha, beta, maxPlayer, currentPlayer === Piece.BLACK ? Piece.WHITE : Piece.BLACK, orgDepth, mem)[1]
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1)
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval
@@ -118,11 +95,94 @@ const test = async (message) => {
                 }
             }
             if (illegal === moves.length) {
-                return [null, 90000]
+                if (board.isCheck(currentPlayer)) {
+                    return [null, 90000]
+                }
+                return [null, 0]
+
             }
             return [bestMove, minEval]
         }
     }
+    const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
+        if (depth === 0) {
+            let result
+            if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
+                result = quiesce(alpha, beta, board, currentPlayer, 1)
+            } else {
+                result = board.getScore(maxPlayer)
+            }
+            return result
+        }
+        const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
+        moves.sort(sortMoves)
+        if (currentPlayer === maxPlayer) {
+            let maxEval = -30000
+            let illegal = 0
+            for (let i = 0; i < moves.length; i++) {
+                const move = moves[i]
+                board.movePiece(move.piece, move)
+                if (board.isIllegal(currentPlayer, move)) {
+                    board.undoMove()
+                    illegal++
+                    continue
+                }
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1)
+                board.undoMove()
+                if (currentEval > maxEval) {
+                    maxEval = currentEval
+                }
+                if (currentEval > alpha) {
+                    alpha = currentEval
+                }
+                if (beta <= alpha) {
+                    break
+                }
+            }
+            if (illegal === moves.length) {
+                if (board.isCheck(currentPlayer)) {
+                    return -30000 * depth // faster checkmates
+                }
+                return 0 // stalemate
+            }
+            return maxEval
+        } else {
+            let minEval = 30000
+            let illegal = 0
+            for (let i = 0; i < moves.length; i++) {
+                const move = moves[i]
+                board.movePiece(move.piece, move)
+                if (board.isIllegal(currentPlayer, move)) {
+                    board.undoMove()
+                    illegal++
+                    continue
+                }
+
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1)
+                board.undoMove()
+                if (currentEval < minEval) {
+                    minEval = currentEval
+                }
+
+                if (currentEval < beta) {
+                    beta = currentEval
+                }
+                if (beta <= alpha) {
+                    break
+                }
+            }
+            if (illegal === moves.length) {
+                if (board.isCheck(currentPlayer)) {
+                    return 30000 * depth
+                }
+                return 0
+
+            }
+            return minEval
+        }
+    }
+
+
 
     // const sortMovesQuiesce = (a, b) => {
     //     if (a.ate !== null && b.ate !== null) {
@@ -152,41 +212,36 @@ const test = async (message) => {
         }
     }
 
-    // const quiesce = (alpha, beta, board, colour, depth) => {
-    //     let evaluation
-    //     const boardHash = board.getBoardHash() + colour.toString()
-    //     if (mem.has(boardHash)) {
-    //         evaluation = mem.get(boardHash)
-    //     } else {
-    //         evaluation = evaluate(board, colour)
-    //         mem.set(boardHash, evaluation)
-    //     }
-    //
-    //     if (depth === 0) {
-    //         return evaluation
-    //     }
-    //     if (evaluation >= beta) {
-    //         return beta
-    //     }
-    //
-    //     alpha = Math.max(alpha, evaluation)
-    //     const moves = board.getAllMoves(colour)
-    //     moves.sort(sortMoves)
-    //     for (const move of moves) {
-    //         if (move.ate !== null && move.ate.points < move.piece.points) { //  && move.ate.points > move.piece.points
-    //             board.movePiece(move.piece, move)
-    //             let score = -quiesce(-beta, -alpha, board, switchColour(colour), depth - 1)
-    //             board.undoMove()
-    //             if (score >= beta) {
-    //                 return beta
-    //             }
-    //             if (score > alpha) {
-    //                 alpha = score
-    //             }
-    //         }
-    //     }
-    //     return alpha
-    // }
+    const quiesce = (alpha, beta, board, colour, depth) => {
+        const evaluation = board.getScore(colour)
+        if (depth === 0) {
+            return evaluation
+        }
+        if (evaluation >= beta) {
+            return beta
+        }
+
+        alpha = Math.max(alpha, evaluation)
+        const moves = board.getAllMoves(colour)
+        moves.sort(sortMoves)
+        for (let i = 0; i < moves.length; i++) {
+            const move = moves[i]
+            if (move.ate !== null) { //  && move.ate.points > move.piece.points
+                board.movePiece(move.piece, move)
+                let score = -quiesce(-beta, -alpha, board, colour * -1, depth - 1)
+                board.undoMove()
+                if (score >= beta) {
+                    return beta
+                }
+                if (score > alpha) {
+                    alpha = score
+                }
+            } else {
+                break
+            }
+        }
+        return alpha
+    }
     //
     // const quiesceOdd = (alpha, beta, board, colour, depth) => {
     //     // const evaluation = evaluate(board, colour)
@@ -602,13 +657,11 @@ const test = async (message) => {
         isIllegal = (colour, move) => {
             // get colour king first
             let king;
-            let kingCount = 0 // make sure kings are not eaten
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     if (!this.isEmpty(row, col)) {
                         const piece = this.getPiece(row, col)
                         if (piece.name === Piece.KING) {
-                            kingCount++
                             if (piece.colour === colour) {
                                 king = piece
                             }
@@ -616,9 +669,6 @@ const test = async (message) => {
                     }
                 }
             }
-            // if (kingCount < 2) {
-            //     return true
-            // }
             if (move.isCastle) {
                 const moves = this.getAllMoves(colour * -1)
                 const row = move.newCell.row
@@ -641,6 +691,33 @@ const test = async (message) => {
                 }
             }
 
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (!this.isEmpty(row, col) && this.getPiece(row, col).colour !== colour) {
+                        const piece = this.getPiece(row, col)
+                        if (piece.isCheck(this, king)) {
+                            return true
+                        }
+                    }
+                }
+            }
+            return false
+        }
+        // check if colour is under check
+        isCheck = (colour) => {
+            let king;
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (!this.isEmpty(row, col)) {
+                        const piece = this.getPiece(row, col)
+                        if (piece.name === Piece.KING) {
+                            if (piece.colour === colour) {
+                                king = piece
+                            }
+                        }
+                    }
+                }
+            }
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     if (!this.isEmpty(row, col) && this.getPiece(row, col).colour !== colour) {
@@ -676,7 +753,7 @@ const test = async (message) => {
         /**
          * Goes through board for positional eval, like piece development, hardcoded for black
          */
-        scanSquaresScore = (colour) => {
+        scanSquaresScore = () => {
             let score = 0
             let materialScore = 0
             for (let row = 0; row < 8; row++) {
@@ -746,22 +823,7 @@ const test = async (message) => {
          * @return {number} score of position
          */
         getScore = (colour) => {
-            // let materialScore = 0 // material control
-            // for (let row = 0; row < 8; row ++) {
-            //     for (let col = 0; col < 8; col ++) {
-            //         const piece = this.board[row][col]
-            //         if (piece instanceof Piece && piece.colour === colour) {
-            //             materialScore += piece.points
-            //         }
-            //         if (piece instanceof Piece && piece.colour !== colour) {
-            //             materialScore -= piece.points
-            //         }
-            //     }
-            // }
-            // const attackedSquares = this.getAttackingSquares(opponentColour) // heavy operation
-            // const attackScore = attackedSquares[0].length // board control
-            // const defenseScore = attackedSquares[1].length // defense
-            const positionalScore = this.scanSquaresScore(colour)
+            const positionalScore = this.scanSquaresScore()
             return (positionalScore) * colour * -1
         }
 
@@ -995,7 +1057,7 @@ const test = async (message) => {
         static KING_SIDE = -1
         static QUEEN_SIDE = 1
         name = Piece.KING
-        points = 90001
+        points = 10000
 
         whiteScore = [
             [-30,-40,-40,-50,-50,-40,-40,-30],

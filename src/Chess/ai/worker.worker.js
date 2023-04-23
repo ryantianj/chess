@@ -517,16 +517,49 @@ const test = async (message) => {
                         if (piece instanceof Pawn) {
                             let past = true
                             if (col + 1 < 8) {
-                                for (let i = 0; i < 8; i++) {
-                                    if (this.getPiece(i, col + 1) instanceof Pawn) {
-                                        past = false
+                                if (piece.colour === Piece.WHITE) {
+                                    for (let i = row  - 1; i >= 0; i--) {
+                                        if (this.getPiece(i, col + 1) instanceof Pawn) {
+                                            past = false
+                                        }
+                                    }
+                                } else {
+                                    for (let i = row + 1; i < 8; i++) {
+                                        if (this.getPiece(i, col + 1) instanceof Pawn) {
+                                            past = false
+                                        }
                                     }
                                 }
+
+                            }
+                            if (col < 8) {
+                                if (piece.colour === Piece.WHITE) {
+                                    for (let i = row  - 1; i >= 0; i--) {
+                                        if (this.getPiece(i, col) instanceof Pawn) {
+                                            past = false
+                                        }
+                                    }
+                                } else {
+                                    for (let i = row + 1; i < 8; i++) {
+                                        if (this.getPiece(i, col) instanceof Pawn) {
+                                            past = false
+                                        }
+                                    }
+                                }
+
                             }
                             if (col - 1 >= 0) {
-                                for (let i = 0; i < 8; i++) {
-                                    if (this.getPiece(i, col - 1) instanceof Pawn) {
-                                        past = false
+                                if (piece.colour === Piece.WHITE) {
+                                    for (let i = row  - 1; i >= 0; i--) {
+                                        if (this.getPiece(i, col - 1) instanceof Pawn) {
+                                            past = false
+                                        }
+                                    }
+                                } else {
+                                    for (let i = row + 1; i < 8; i++) {
+                                        if (this.getPiece(i, col - 1) instanceof Pawn) {
+                                            past = false
+                                        }
                                     }
                                 }
                             }

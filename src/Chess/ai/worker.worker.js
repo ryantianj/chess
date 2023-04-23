@@ -762,6 +762,7 @@ const test = async (message) => {
             if (move.isCastle) {
                 const moves = this.getAllMoves(colour * -1)
                 const row = move.newCell.row
+                const oldCol = move.oldCell.col // where king was originally
                 if (move.newCell.col === 6) { // kingside
                     for (const opp of moves) {
                         const moveRow = opp.newCell.row
@@ -769,12 +770,18 @@ const test = async (message) => {
                         if (moveRow === row && (moveCol === 6 || moveCol === 5 || moveCol === 4)) {
                             return true
                         }
+                        if (moveRow === row && oldCol === moveCol) { // king under check, cannot castle
+                            return true
+                        }
                     }
                 } else {
                     for (const opp of moves) {
                         const moveRow = opp.newCell.row
                         const moveCol = opp.newCell.col
-                        if (moveRow === row && (moveCol === 2 || moveCol === 3 || moveCol === 4)) {
+                        if (moveRow === row && (moveCol === 1 || moveCol === 2 || moveCol === 3 || moveCol === 4)) {
+                            return true
+                        }
+                        if (moveRow === row && oldCol === moveCol) {
                             return true
                         }
                     }

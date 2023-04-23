@@ -78,6 +78,14 @@
     background-color: yellow;
 }
 
+.from {
+    background-color: #f2ff00;
+}
+
+.ate {
+    background-color: orange;
+}
+
 .tooltip {
     width: 300px;
     background-color: black;
@@ -98,17 +106,17 @@
 
 @media only screen and (max-width: 768px) {
     .chessBoard {
-        grid-template-columns: 11vw 11vw 11vw 11vw 11vw 11vw 11vw 11vw;
-        grid-template-rows: 11vw 11vw 11vw 11vw 11vw 11vw 11vw 11vw;
+        grid-template-columns: 12.4vw 12.4vw 12.4vw 12.4vw 12.4vw 12.4vw 12.4vw 12.4vw;
+        grid-template-rows: 12.4vw 12.4vw 12.4vw 12.4vw 12.4vw 12.4vw 12.4vw 12.4vw;
     }
     .boardPiece {
-        width: 11vw;
-        height: 11vw;
+        width: 12.4vw;
+        height: 12.4vw;
     }
 
     .promotionPiece {
-        width: 11vw;
-        height: 11vw;
+        width: 12.4vw;
+        height: 12.4vw;
     }
     .alphabetCoord {
         font-size: 8px;
@@ -116,5 +124,13 @@
 
     .numberCoord {
         font-size: 8px;
+    }
+    .tooltip {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        left: 0;
+        margin-left: 0;
     }
 }

@@ -3,15 +3,8 @@ import Game from "./logic/Game";
 import Piece from "./logic/Piece";
 import Worker from "./ai/worker.worker";
 import Move from "./logic/Move";
-import Cell from "./logic/Cell";
-import Bishop from "./logic/Pieces/Bishop";
-import King from "./logic/Pieces/King";
-import Knight from "./logic/Pieces/Knight";
-import Pawn from "./logic/Pieces/Pawn";
-import Queen from "./logic/Pieces/Queen";
-import Rook from "./logic/Pieces/Rook";
 
-const myWorker = new Worker()
+let myWorker = new Worker()
 
 const ChessContext = React.createContext({
     game: null,
@@ -107,7 +100,7 @@ export const ChessContextProvider = (props) => {
             setHighlightCell([])
             return
         }
-        if (result["promotion"] !== undefined) { // TODO: handle bot promotion
+        if (result["promotion"] !== undefined) {
             setPromotion(true)
             setPromotionDetails(result)
         }
@@ -153,29 +146,6 @@ export const ChessContextProvider = (props) => {
             alert("Engine error: " + ev.message)
         }
         myWorker.onmessage = (message) => {
-             const parsePiece = (pieceString, row, col) => {
-                if (pieceString === null) {
-                    return null
-                }
-                const pieceColour = pieceString.slice(0, 1)
-                const actualColour = pieceColour === "w" ? Piece.WHITE : Piece.BLACK
-                const piece = pieceString.slice(1, 2)
-                if (piece === "b") {
-                    return new Bishop(actualColour, new Cell(row, col))
-                } else if (piece === 'k') {
-                    return new King(actualColour, new Cell(row, col))
-                } else if (piece === 'n') {
-                    return new Knight(actualColour, new Cell(row, col))
-                } else if (piece === 'p') {
-                    return new Pawn(actualColour, new Cell(row, col))
-                } else if (piece === 'q') {
-                    return new Queen(actualColour, new Cell(row, col))
-                } else if (piece === 'r') {
-                    return new Rook(actualColour, new Cell(row, col))
-                } else {
-                    return null
-                }
-            }
             if (message) {
                 const data = message.data
                 if (data.isError) {
@@ -183,6 +153,8 @@ export const ChessContextProvider = (props) => {
                 } else {
                     const parseMove = Move.parseMove(game, data)
                     engineMove(parseMove)
+                    myWorker.terminate();
+                    myWorker = new Worker()
                 }
             }
         }
@@ -208,7 +180,8 @@ export const ChessContextProvider = (props) => {
             setSelectedPiece(null)
             isGameOver({isGameOver: false})
             isAI(false)
-            myWorker.postMessage({newGame: true})
+            myWorker.terminate();
+            myWorker = new Worker()
         }
     }
 
@@ -218,7 +191,6 @@ export const ChessContextProvider = (props) => {
                 if (game.board.moves.length > 1 && game.turnColour !== aiColour) {
                     game.undoMove()
                     game.undoMove()
-                    myWorker.postMessage({undo: true})
                 }
             } else {
                 game.undoMove()

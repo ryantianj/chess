@@ -8,17 +8,6 @@ import King from "./Pieces/King";
 import knight from "./Pieces/Knight";
 import Knight from "./Pieces/Knight";
 
-const org = [
-    [new Rook(Piece.BLACK, new Cell(0,0)), new knight(Piece.BLACK, new Cell(0, 1)), new Bishop(Piece.BLACK, new Cell(0, 2)), new Queen(Piece.BLACK, new Cell(0, 3)), new King(Piece.BLACK, new Cell(0, 4)), new Bishop(Piece.BLACK, new Cell(0, 5)), new knight(Piece.BLACK, new Cell(0, 6)), new Rook(Piece.BLACK, new Cell(0,7))],
-    [new Pawn(Piece.BLACK, new Cell(1, 0)), new Pawn(Piece.BLACK, new Cell(1, 1)), new Pawn(Piece.BLACK, new Cell(1, 2)), new Pawn(Piece.BLACK, new Cell(1, 3)), new Pawn(Piece.BLACK, new Cell(1, 4)), new Pawn(Piece.BLACK, new Cell(1, 5)), new Pawn(Piece.BLACK, new Cell(1, 6)), new Pawn(Piece.BLACK, new Cell(1, 7))],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null],
-    [new Pawn(Piece.WHITE, new Cell(6, 0)), new Pawn(Piece.WHITE, new Cell(6, 1)), new Pawn(Piece.WHITE, new Cell(6, 2)), new Pawn(Piece.WHITE, new Cell(6, 3)), new Pawn(Piece.WHITE, new Cell(6, 4)), new Pawn(Piece.WHITE, new Cell(6, 5)), new Pawn(Piece.WHITE, new Cell(6, 6)), new Pawn(Piece.WHITE, new Cell(6, 7))],
-    [new Rook(Piece.WHITE, new Cell(7,0)), new knight(Piece.WHITE, new Cell(7, 1)), new Bishop(Piece.WHITE, new Cell(7, 2)), new Queen(Piece.WHITE, new Cell(7, 3)), new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
-]
-
 const testCase = [
     [new Rook(Piece.WHITE, new Cell(0,0)), new Bishop(Piece.BLACK, new Cell(0, 1)), null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null],
@@ -30,6 +19,17 @@ const testCase = [
     [null, null, null, null, new Rook(Piece.WHITE, new Cell(7,4)), null, null, new King(Piece.WHITE, new Cell(7,7))]
 ]
 
+const drawCase = [
+    [null, null, null, null, null, null, null, null],
+    [new Pawn(Piece.WHITE, new Cell(1,0)), new Pawn(Piece.BLACK, new Cell(1,1)),  new Pawn(Piece.BLACK, new Cell(1,2)), null, null, null,  new Pawn(Piece.BLACK, new Cell(1,6)), null],
+    [ new Pawn(Piece.BLACK, new Cell(2,0)), null, null, null, null, null,  new Pawn(Piece.BLACK, new Cell(2,6)), null],
+    [null, null, null, new Rook(Piece.WHITE, new Cell(3,3)), null, null, null, null],
+    [null, null, null, null, null, new King(Piece.BLACK, new Cell(4,5)), null, null],
+    [new Pawn(Piece.WHITE, new Cell(5,0)), null, null, new Queen(Piece.WHITE, new Cell(5,3)), null, null, null, new Pawn(Piece.WHITE, new Cell(5,7))],
+    [null, null, null, null, null, null, new Pawn(Piece.WHITE, new Cell(6,6)), null],
+    [null, null, null, null, null, null, null, new King(Piece.WHITE, new Cell(7,7))],
+]
+
 class Board {
     #board;
 
@@ -39,7 +39,7 @@ class Board {
     }
 
     newBoard = () => {
-        const startingBoard = [
+        const org = [
             [new Rook(Piece.BLACK, new Cell(0,0)), new knight(Piece.BLACK, new Cell(0, 1)), new Bishop(Piece.BLACK, new Cell(0, 2)), new Queen(Piece.BLACK, new Cell(0, 3)), new King(Piece.BLACK, new Cell(0, 4)), new Bishop(Piece.BLACK, new Cell(0, 5)), new knight(Piece.BLACK, new Cell(0, 6)), new Rook(Piece.BLACK, new Cell(0,7))],
             [new Pawn(Piece.BLACK, new Cell(1, 0)), new Pawn(Piece.BLACK, new Cell(1, 1)), new Pawn(Piece.BLACK, new Cell(1, 2)), new Pawn(Piece.BLACK, new Cell(1, 3)), new Pawn(Piece.BLACK, new Cell(1, 4)), new Pawn(Piece.BLACK, new Cell(1, 5)), new Pawn(Piece.BLACK, new Cell(1, 6)), new Pawn(Piece.BLACK, new Cell(1, 7))],
             [null, null, null, null, null, null, null, null],
@@ -49,6 +49,7 @@ class Board {
             [new Pawn(Piece.WHITE, new Cell(6, 0)), new Pawn(Piece.WHITE, new Cell(6, 1)), new Pawn(Piece.WHITE, new Cell(6, 2)), new Pawn(Piece.WHITE, new Cell(6, 3)), new Pawn(Piece.WHITE, new Cell(6, 4)), new Pawn(Piece.WHITE, new Cell(6, 5)), new Pawn(Piece.WHITE, new Cell(6, 6)), new Pawn(Piece.WHITE, new Cell(6, 7))],
             [new Rook(Piece.WHITE, new Cell(7,0)), new knight(Piece.WHITE, new Cell(7, 1)), new Bishop(Piece.WHITE, new Cell(7, 2)), new Queen(Piece.WHITE, new Cell(7, 3)), new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
         ]
+        const startingBoard = org
         return startingBoard
     }
 
@@ -159,6 +160,7 @@ class Board {
 
     movePiece = (piece, move) => {
         const result =  this.#board[piece.cell.row][piece.cell.col].movePiece(move, this)
+        move.isCheck = this.isCheck(move.piece.colour * -1)
         this.moves.push(move)
         return result
     }
@@ -250,6 +252,7 @@ class Board {
         const row = piece.cell.row
         const col = piece.cell.col
         this.#board[row][col] = piece
+        this.moves[this.moves.length - 1].promotionPiece = piece
     }
 
     // returns if colour is under check

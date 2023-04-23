@@ -57,9 +57,19 @@ const BoardCell = ({row, col, piece}) => {
             style += " focus"
         }
         if (chessCtx.game.board.moves.length > 0) {
-            const newCell = chessCtx.game.board.moves.slice(-1)[0].newCell
+            const lastMove = chessCtx.game.board.moves.slice(-1)[0]
+            const newCell = lastMove.newCell
             if (newCell.row === row && newCell.col === col) {
-                style += " focus"
+                if (lastMove.ate !== null) {
+                    style += " ate"
+                } else {
+                    style += " focus"
+                }
+
+            }
+            const oldCell = lastMove.oldCell
+            if (oldCell.row === row && oldCell.col === col) {
+                style += " from"
             }
         }
         return style

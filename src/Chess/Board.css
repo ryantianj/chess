@@ -8,6 +8,7 @@
     grid-template-columns: 70px 70px 70px 70px 70px 70px 70px 70px;
     grid-template-rows: 70px 70px 70px 70px 70px 70px 70px 70px;
     border: 1px solid black;
+
 }
 
 .boardPiece {

@@ -36,6 +36,7 @@ class Board {
     constructor() {
         this.#board = this.newBoard()
         this.moves = []
+        this.testMoves = []
     }
 
     newBoard = () => {
@@ -159,10 +160,47 @@ class Board {
     }
 
     movePiece = (piece, move) => {
-        const result =  this.#board[piece.cell.row][piece.cell.col].movePiece(move, this)
+        const result =  this.getPiece(piece.cell.row, piece.cell.col).movePiece(move, this)
         move.isCheck = this.isCheck(move.piece.colour * -1)
+        move.boardString = this.getFullString()
         this.moves.push(move)
         return result
+    }
+
+    testMovePiece = (piece, move) => {
+        const result =  this.getPiece(piece.cell.row, piece.cell.col).movePiece(move, this)
+        this.testMoves.push(move)
+        return result
+    }
+
+    testUndoMove = () => {
+        if (this.testMoves.length > 0) {
+            const move = this.testMoves.pop()
+            const prevRow = move.oldCell.row
+            const prevCol = move.oldCell.col
+            const piece = this.#board[move.newCell.row][move.newCell.col]
+            this.#board[prevRow][prevCol] = piece
+            piece.moves.pop()
+            piece.cell.row = prevRow
+            piece.cell.col = prevCol
+            if (move.isEnPassant) { // add back pawn
+                this.#board[move.ate.cell.row][move.ate.cell.col] = move.ate
+                this.#board[move.newCell.row][move.newCell.col] = null
+                return true
+            }
+            if (move.isPromotion) { // remove piece, add back pawn
+                this.#board[prevRow][prevCol] = new Pawn(piece.colour, piece.cell, piece.moves)
+            }
+            if (move.castle.isCastle) { // king will be undone, need to undo rook
+                this.#board[move.castle.rook.oldCell.row][move.castle.rook.oldCell.col] = move.castle.rook.piece
+                move.castle.rook.piece.cell.row = move.castle.rook.oldCell.row
+                move.castle.rook.piece.cell.col = move.castle.rook.oldCell.col
+                this.#board[move.castle.rook.newCell.row][move.castle.rook.newCell.col] = null
+            }
+            this.#board[move.newCell.row][move.newCell.col] = move.ate
+            return true
+        }
+        return false
     }
 
     undoMove = () => {
@@ -273,12 +311,12 @@ class Board {
      * @param move
      */
     willCheck = (piece, move) => {
-        this.movePiece(piece, move)
+        this.testMovePiece(piece, move)
         if (this.isCheck(piece.colour)) {
-            this.undoMove()
+            this.testUndoMove()
             return true
         }
-        this.undoMove()
+        this.testUndoMove()
         return false
     }
     getAllMoves = (colour) => {
@@ -299,29 +337,24 @@ class Board {
      * @param times
      * @return {boolean}
      */
-    isRepeatPosition = (numMoves) => {
-        const lengthCheck = numMoves
-        if (this.moves.length >= lengthCheck) {
-            const getLastNMoves = this.moves.slice(-lengthCheck)
-            let firstMove = getLastNMoves[0]
-            let secondMove = getLastNMoves[1]
-            for (let i = 2; i < lengthCheck; i+=4) {
-                const current = getLastNMoves[i]
-                const currentTwo = getLastNMoves[i+1]
-                if (!(current.newCell.row === firstMove.oldCell.row && current.newCell.col === firstMove.oldCell.col && firstMove.piece === current.piece)) {
-                    return false
-                }
-                if (!(currentTwo.newCell.row === secondMove.oldCell.row && currentTwo.newCell.col === secondMove.oldCell.col && secondMove.piece === currentTwo.piece)) {
-                    return false
-                }
-            }
-            return true
+    isRepeatPosition = () => {
+        if (this.moves.length < 6) {
+            return false
         }
-        return false
+        const latestMove = this.moves.slice(-1)[0]
+        const latestPosition = latestMove.boardString
+        let positionCount = 0
+        for (const move of this.moves) {
+            if (move.boardString === latestPosition) {
+                positionCount++
+            }
+        }
+
+        return positionCount >= 3
     }
 
     /**
-     * Checks if game is over for colour, means other colour wins
+     * Checks if game is over for colour, means other colour wins, check is done AFTER a legal move
      * @param colour
      * @return {{isGameOver: boolean, message: string}}
      */
@@ -333,7 +366,7 @@ class Board {
             return {isGameOver: true, message: player + " wins by checkmate"}
         } else if (!underCheck && allMoves.length <= 0) {
             return {isGameOver: true, message: "Draw by stalemate"}
-        } else if (this.isRepeatPosition(8)) {
+        } else if (this.isRepeatPosition()) {
             return {isGameOver: true, message: "Draw by threefold repetition"}
         }
         return {isGameOver: false, message: ""}
@@ -370,6 +403,23 @@ class Board {
                 }
             }
             newBoard.push(newRow)
+        }
+        return newBoard
+    }
+
+    getFullString = () => {
+        let newBoard = ""
+        for (let row = 0; row < 8; row++) {
+            let newRow = ""
+            for (let col = 0; col < 8; col++) {
+                const piece = this.getPiece(row, col)
+                if (piece !== null) {
+                    newRow += piece.getString()
+                } else {
+                    newRow+= " "
+                }
+            }
+            newBoard += newRow
         }
         return newBoard
     }

@@ -179,6 +179,7 @@ export const ChessContextProvider = (props) => {
             setHighlightCell([])
             setSelectedPiece(null)
             isGameOver({isGameOver: false})
+            setPromotion(false)
             isAI(false)
             myWorker.terminate();
             myWorker = new Worker()
@@ -186,7 +187,7 @@ export const ChessContextProvider = (props) => {
     }
 
     const undo = () => {
-        if (!gameOver.isGameOver) {
+        if (!gameOver.isGameOver && !promotion) {
             if (ai) {
                 if (game.board.moves.length > 1 && game.turnColour !== aiColour) {
                     game.undoMove()

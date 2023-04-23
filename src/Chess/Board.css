@@ -21,7 +21,7 @@
 .promotionPiece {
     width: 70px;
     height: 70px;
-    z-index: 12;
+    z-index: 20;
 }
 
 .cell {
@@ -61,6 +61,7 @@
     border-radius: 50%;
     background-color: red;
     z-index: 10;
+    position: relative;
 }
 
 .alphabetCoord {
@@ -95,10 +96,9 @@
     border-radius: 6px;
     padding: 5px 0;
     position: relative;
-    z-index: 20;
-    bottom: 10%;
+    z-index: 30;
     left: 50%;
-    margin-left: -60px;
+    margin-left: -10px;
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -133,5 +133,6 @@
         align-items: center;
         left: 0;
         margin-left: 0;
+        width: 12.4vw;
     }
 }

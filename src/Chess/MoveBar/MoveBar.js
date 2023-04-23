@@ -8,7 +8,7 @@ const MoveBar = () => {
     // show latest move
     const handleScrollRight = () => {
         const objDiv = document.getElementById("moveBar");
-        objDiv.scrollTo({ left: chessCtx.game.board.moves.length * 50, behavior: 'smooth' })
+        objDiv.scrollTo({ left: chessCtx.game.board.moves.length * 80, behavior: 'smooth' })
     }
 
     useEffect(() => {

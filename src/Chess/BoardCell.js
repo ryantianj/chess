@@ -84,7 +84,7 @@ const BoardCell = ({row, col, piece}) => {
             , new Knight(piece.colour, piece.cell), new Bishop(piece.colour, piece.cell)]
 
         return pieces.map((pc, i) =>
-            <img src={pc.image} alt={"piece"} className="promotionPiece" key={i}
+            <img src={pc.image} alt={"piece"} className="promotionPiece" style={chessCtx.aiColour === Piece.WHITE ? {transform: "rotateX(180deg) rotateY(180deg)"} :{}}
                  onClick={() => handlePromote(pc)}/>
         )
     }
@@ -111,7 +111,6 @@ const BoardCell = ({row, col, piece}) => {
     return (
         <button className={getCSS()} onDragOver={allowDrop} onDrop={handleDrop}
                 onClick={handleClick}
-                style={chessCtx.aiColour === Piece.WHITE ? {transform: "rotateX(180deg) rotateY(180deg)"} :{}}
                 disabled={chessCtx.ai && piece !== null && piece.colour === chessCtx.aiColour && chessCtx.game.turnColour === chessCtx.aiColour}
         >
             {isHighlight() && <div className="highlight"></div>}
@@ -120,15 +119,16 @@ const BoardCell = ({row, col, piece}) => {
             {piece !== null && <img
                 id={row + " " + col}
                 src={piece.image}
+                style={chessCtx.aiColour === Piece.WHITE ? {transform: "rotateX(180deg) rotateY(180deg)"} :{}}
                 className="boardPiece"
                 alt={"piece"}
                 draggable={chessCtx.ai && piece !== null && piece.colour === chessCtx.aiColour ? "false" : "true"} onDragStart={handleDrag}
             />}
             {chessCtx.aiColour === Piece.WHITE
-                ? row === 0 && <p className="alphabetCoord">{String.fromCharCode(col + 97)}</p>
+                ? row === 0 && <p className="alphabetCoord"  style={chessCtx.aiColour === Piece.WHITE ? {transform: "rotateX(180deg) rotateY(180deg)", bottom: "55%", left:"-80%"} :{}}>{String.fromCharCode(col + 97)}</p>
                 : row === 7 && <p className="alphabetCoord">{String.fromCharCode(col + 97)}</p>}
             {chessCtx.aiColour === Piece.WHITE
-                ? col === 7 && <p className="numberCoord">{String.fromCharCode(56 - row)}</p>
+                ? col === 7 && <p className="numberCoord"  style={chessCtx.aiColour === Piece.WHITE ? {transform: "rotateX(180deg) rotateY(180deg)", top: "55%", right: "-80%"} :{}}>{String.fromCharCode(56 - row)}</p>
                 : col === 0 && <p className="numberCoord">{String.fromCharCode(56 - row)}</p>}
         </button>
     )

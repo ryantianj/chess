@@ -11,7 +11,7 @@ const test = async (message) => {
     // for bishop, fianchetto bonus points, control over square colour (using pawns), bishop pair bonus
     // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
     // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
-
+    const mem = new Map() // for killer moves
     const ab =  (boardString, depth, moveString, colour) => {
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
@@ -23,7 +23,10 @@ const test = async (message) => {
             copyBoard.setEndGame()
         }
         copyBoard.updatePieceValues(totalMoves)
-        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour)
+        for (let i = 1; i < depth; i++) {
+            mem.set(i, [null, null, null]) // max number of killer moves
+        }
+        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, mem)
         // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
         // const end = performance.now()
         // console.log(end - start, totalMoves, nodes)
@@ -32,7 +35,7 @@ const test = async (message) => {
         return result[0] // should be a move
     }
 
-    const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer) => {
+    const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer, mem) => {
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
         moves.sort(sortMoves)
         let bestMove;
@@ -51,7 +54,7 @@ const test = async (message) => {
                 if (bestMove === undefined) {
                     bestMove = move
                 }
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem)
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
@@ -83,7 +86,7 @@ const test = async (message) => {
                 if (bestMove === undefined) {
                     bestMove = move
                 }
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem)
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval
@@ -104,7 +107,8 @@ const test = async (message) => {
             return [bestMove, minEval]
         }
     }
-    const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer, prevMoves) => {
+    const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer, prevMoves, mem) => {
+        const MAX_KILLER = 2
         if (depth === 0) {
             let result
             if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
@@ -115,7 +119,7 @@ const test = async (message) => {
             return result
         }
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
-        moves.sort(sortMoves)
+        moveOrder(moves, mem, depth)
         if (currentPlayer === maxPlayer) {
             let maxEval = -30000
             let illegal = 0
@@ -127,7 +131,7 @@ const test = async (message) => {
                     illegal++
                     continue
                 }
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem)
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
@@ -136,6 +140,17 @@ const test = async (message) => {
                     alpha = currentEval
                 }
                 if (beta <= alpha) {
+                    if (move.ate !== null) {
+                        break
+                    }
+                    const arr = mem.get(depth)
+                    if (arr.find(e => e!== null && isEqualMove(e, move))) {
+                        break
+                    }
+                    for (let j = MAX_KILLER - 2; j >= 0; j--) {
+                        arr[j + 1] = arr[j]
+                    }
+                    arr[0] = move
                     break
                 }
             }
@@ -158,7 +173,7 @@ const test = async (message) => {
                     continue
                 }
 
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves, mem)
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval
@@ -168,6 +183,17 @@ const test = async (message) => {
                     beta = currentEval
                 }
                 if (beta <= alpha) {
+                    if (move.ate !== null) {
+                        break
+                    }
+                    const arr = mem.get(depth)
+                    if (arr.find(e => e!== null && isEqualMove(e, move))) {
+                        break
+                    }
+                    for (let j = MAX_KILLER - 2; j >= 0; j--) {
+                        arr[j + 1] = arr[j]
+                    }
+                    arr[0] = move
                     break
                 }
             }
@@ -182,35 +208,70 @@ const test = async (message) => {
         }
     }
 
+    const moveOrder = (moves, mem, depth) => {
 
+        const sortMovesO = (a, b) => {
+            if (a.ate !== null && b.ate !== null) {
+                const aScore = a.piece.points - a.ate.points
+                const bScore = b.piece.points - b.ate.points
+                return aScore < bScore ? -1: 1
+            } else {
+                if (a.ate !== null) {
+                    return -1
+                } else if (b.ate !== null) {
+                    return 1
+                }
+                const memSlot = mem.get(depth)
+                for (let slot = 0; slot < memSlot.length; slot++) {
+                    const killerMove = memSlot[slot]
+                    if (killerMove !== null && isEqualMove(a, killerMove)) {
+                        return -1
+                    }
+                    if (killerMove !== null && isEqualMove(b, killerMove)) {
+                        return 1
+                    }
+                }
 
-    // const sortMovesQuiesce = (a, b) => {
-    //     if (a.ate !== null && b.ate !== null) {
-    //         const aScore = a.piece.points - a.ate.points
-    //         const bScore = b.piece.points - b.ate.points
-    //         return aScore < bScore ? 1: -1
-    //     } else if (a.ate !== null) {
-    //         return -1
-    //     } else if (b.ate !== null) {
-    //         return 1
-    //     }
-    //     return 0
-    // }
+                const aScore = a.piece.colour === Piece.WHITE ? a.piece.whiteScore[a.newCell.row][a.newCell.col] : a.piece.blackScore[a.newCell.row][a.newCell.col]
+                const bScore = b.piece.colour === Piece.WHITE ? b.piece.whiteScore[b.newCell.row][b.newCell.col] : b.piece.blackScore[b.newCell.row][b.newCell.col]
+                return aScore < bScore ? 1: -1
+
+            }
+        }
+        moves.sort(sortMovesO)
+    }
+
+    const isEqualMove = (a, b) => {
+        if (a.newCell.row === b.newCell.row && a.newCell.col === b.newCell.col && a.oldCell.row === b.oldCell.row && a.oldCell.col === b.oldCell.col && a.piece.constructor === b.piece.constructor) {
+            if (a.ate !== null && b.ate !== null) {
+                return a.ate.constructor === b.ate.constructor
+            }
+            return a.ate === b.ate
+        }
+        return false
+    }
+
     const sortMoves = (a, b) => {
         if (a.ate !== null && b.ate !== null) {
             const aScore = a.piece.points - a.ate.points
             const bScore = b.piece.points - b.ate.points
             return aScore < bScore ? -1: 1
-        } else if (a.ate !== null) {
-            return -1
-        } else if (b.ate !== null) {
-            return 1
         } else {
-            const aScore = a.piece.colour === Piece.WHITE ? a.piece.whiteScore[a.newCell.row][a.newCell.col] : a.piece.blackScore[a.newCell.row][a.newCell.col]
-            const bScore = b.piece.colour === Piece.WHITE ? b.piece.whiteScore[b.newCell.row][b.newCell.col] : b.piece.blackScore[b.newCell.row][b.newCell.col]
-            return aScore < bScore ? 1: -1
+            if (a.ate !== null) {
+                return -1
+            } else if (b.ate !== null) {
+                return 1
+            } else {
+                const aScore = a.piece.colour === Piece.WHITE ? a.piece.whiteScore[a.newCell.row][a.newCell.col] : a.piece.blackScore[a.newCell.row][a.newCell.col]
+                const bScore = b.piece.colour === Piece.WHITE ? b.piece.whiteScore[b.newCell.row][b.newCell.col] : b.piece.blackScore[b.newCell.row][b.newCell.col]
+                return aScore < bScore ? 1: -1
+            }
         }
     }
+
+
+
+
 
     const quiesce = (alpha, beta, board, colour, depth, prevMoves) => {
         const evaluation = board.getScore(colour, prevMoves)

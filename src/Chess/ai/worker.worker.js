@@ -4,6 +4,9 @@ const test = async (message) => {
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
     // https://stackoverflow.com/questions/16500739/chess-high-branching-factor
+    // https://github.com/maksimKorzh/chess_programming/blob/master/src/bbc/collecting_pv/bbc.c
+    // https://github.com/kbjorklu/chess/blob/master/src/bitboard.js
+    //https://chess.stackexchange.com/questions/28160/moves-per-depth-in-search-engines
     // TODO: check if endgame before running search, set score tables before search, done after set board string
     // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
     // TODO: update piece score tables based on position before running search, done after set board string
@@ -17,6 +20,11 @@ const test = async (message) => {
     let blackCanCastle = true
     const pv_length = Array.from({length: MAX_DEPTH}, (x) => 0);
     const pv_table = Array.from({length: MAX_DEPTH}, (x) => Array.from({length: MAX_DEPTH}, (x) => 0))
+    let startTime;
+    const MAX_TIME = 20000 // 20 seconds
+    const CHECK_THRESHOLD = 100000 // power of 2
+    let nodes = 0
+    let branch = 0
     const ab =  (boardString, depth, moveString, colour, pv) => {
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
@@ -34,21 +42,20 @@ const test = async (message) => {
         for (let i = 1; i < depth; i++) {
             mem.set(i, [null, null, null]) // max number of killer moves
         }
-        const start = performance.now()
+        startTime = performance.now()
         let result
         for (let i = 1; i <= depth; i++) { // iterative deepening
             result = miniMax(copyBoard, i, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, mem, 0)
             console.log("Score", result[1], pv_table[0][0].newCell)
         }
         // result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, mem, 0)
-
         const end = performance.now()
         // console.log(end - start, totalMoves, nodes)
         const arr = []
         for (let i = 0; i < depth; i++) {
             arr.push(pv_table[0][i].getMoveString())
         }
-        console.log(end - start)
+        console.log(end - startTime, nodes, branch)
         // console.log("eval", nodes)
 
 
@@ -56,6 +63,11 @@ const test = async (message) => {
     }
 
     const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer, mem, ply) => {
+        if (nodes % CHECK_THRESHOLD === 0) {
+            if (performance.now() - startTime > MAX_TIME) {
+                return [pv_table[0][0], -99999]
+            }
+        }
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
         moveOrderRoot(moves, depth, ply)
         let bestMove;
@@ -142,6 +154,13 @@ const test = async (message) => {
         }
     }
     const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer, prevMoves, mem, ply) => {
+        if (nodes % CHECK_THRESHOLD === 0) {
+            if (performance.now() - startTime > MAX_TIME) {
+                return -99999
+            }
+        }
+        let branchLocal = 0
+        nodes++
         const MAX_KILLER = 2
         pv_length[ply] = ply
         if (depth === 0) {
@@ -166,6 +185,7 @@ const test = async (message) => {
                     illegal++
                     continue
                 }
+                branchLocal++
                 const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem, ply + 1)
                 board.undoMove()
                 if (currentEval > maxEval) {
@@ -196,6 +216,7 @@ const test = async (message) => {
                     break
                 }
             }
+            branch = (branch + branchLocal) / 2
             if (illegal === moves.length) {
                 if (board.isCheck(currentPlayer)) {
                     return -30000 * depth // faster checkmates
@@ -214,7 +235,7 @@ const test = async (message) => {
                     illegal++
                     continue
                 }
-
+                branchLocal++
                 const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves, mem, ply +1)
                 board.undoMove()
                 if (currentEval < minEval) {
@@ -246,6 +267,7 @@ const test = async (message) => {
                     break
                 }
             }
+            branch = (branch + branchLocal) / 2
             if (illegal === moves.length) {
                 if (board.isCheck(currentPlayer)) {
                     return 30000 * depth

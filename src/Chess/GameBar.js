@@ -27,7 +27,7 @@ const GameBar = () => {
             } />}
 
             <Button onClick={() => chessCtx.newGame()}>New Game</Button>
-            {<Button onClick={() => chessCtx.undo()}>Undo</Button>}
+            {chessCtx.depth <= 3 && <Button onClick={() => chessCtx.undo()}>Undo</Button>}
             {showButtons && <Button onClick={() => chessCtx.toggleEngine()}>Engine on</Button>}
             {showButtons && "Play as: "}
             {showButtons && <select value={chessCtx.aiColour}

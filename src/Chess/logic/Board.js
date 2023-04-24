@@ -41,6 +41,17 @@ const hardCase = [ // rook a6
     [null, null, null, null, null, new King(Piece.WHITE, new Cell(7,5)), null, null],
 ]
 
+const m1 = [
+    [null, null, null, new King(Piece.BLACK, new Cell(0,3)), null, null, null, null],
+    [new Pawn(Piece.WHITE, new Cell(1, 0)), null, null, null, null, null, null, new Rook(Piece.WHITE, new Cell(1,7))],
+    [new Queen(Piece.WHITE, new Cell(2,0)), null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+]
+
 class Board {
     #board;
 

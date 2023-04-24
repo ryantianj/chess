@@ -84,7 +84,7 @@ const BoardCell = ({row, col, piece}) => {
             , new Knight(piece.colour, piece.cell), new Bishop(piece.colour, piece.cell)]
 
         return pieces.map((pc, i) =>
-            <img src={pc.image} alt={"piece"} className="promotionPiece" style={chessCtx.aiColour === Piece.WHITE ? {transform: "rotateX(180deg) rotateY(180deg)"} :{}}
+            <img src={pc.image} alt={"piece"} key={i} className="promotionPiece" style={chessCtx.aiColour === Piece.WHITE ? {transform: "rotateX(180deg) rotateY(180deg)"} :{}}
                  onClick={() => handlePromote(pc)}/>
         )
     }

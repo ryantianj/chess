@@ -7,6 +7,8 @@ const test = async (message) => {
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/bbc/collecting_pv/bbc.c
     // https://github.com/kbjorklu/chess/blob/master/src/bitboard.js
     //https://chess.stackexchange.com/questions/28160/moves-per-depth-in-search-engines
+    // Null move: https://web.archive.org/web/20071031095933/http://www.brucemo.com/compchess/programming/nullmove.htm
+    // https://github.com/maksimKorzh/chess_programming/blob/master/src/bbc/null_move_pruning/bbc.c
     // TODO: check if endgame before running search, set score tables before search, done after set board string
     // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
     // TODO: update piece score tables based on position before running search, done after set board string
@@ -26,7 +28,9 @@ const test = async (message) => {
     const CHECK_THRESHOLD = 100000 // power of 2
     let nodes = 0
     let branch = 0
+    const NULL_MOVE_R = 2
     const ab =  (boardString, depth, moveString, colour, pv) => {
+        let bestMove;
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
@@ -47,8 +51,9 @@ const test = async (message) => {
         }
         startTime = performance.now()
         let result
-        for (let i = 1; i <= depth; i++) { // iterative deepening
+        for (let i = 2; i <= depth; i+=2) { // iterative deepening
             result = miniMax(copyBoard, i, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, mem, 0)
+            bestMove = pv_table[0][0]
             const prev = pv_table[0]
             currentPv = [...prev]
             console.log(i, "Score", result[1], pv_table[0][0].newCell)
@@ -67,7 +72,7 @@ const test = async (message) => {
         // console.log("eval", nodes)
 
 
-        return [pv_table[0][0].getMoveString(), arr] // should be a move
+        return [bestMove.getMoveString(), arr] // should be a move
     }
 
     const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer, mem, ply) => {
@@ -171,14 +176,18 @@ const test = async (message) => {
         nodes++
         const MAX_KILLER = 2
         pv_length[ply] = ply
-        if (depth === 0) {
+        if (depth <= 0) {
             let result
-            if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
+            if (false) {
                 result = quiesce(alpha, beta, board, currentPlayer, 2, prevMoves)
             } else {
                 result = board.getScore(maxPlayer, prevMoves)
             }
             return result
+        }
+        const nullMoveVal =  miniMaxCore(board, depth - 1 - NULL_MOVE_R, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves, mem, ply + 1 + NULL_MOVE_R, false)
+        if (nullMoveVal >= beta) {
+            return beta
         }
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
         moveOrder(moves, mem, depth, ply, isLeftMost)

@@ -170,6 +170,13 @@ export const ChessContextProvider = (props) => {
         setPromotionDetails([])
         setHighlightCell([])
         setSelectedPiece(null)
+        const opponentColour = selectedPiece.colour === Piece.BLACK ? Piece.WHITE : Piece.BLACK
+        const checkGameOver = game.board.isGameOver(opponentColour)
+        if (checkGameOver.isGameOver) {
+            isGameOver(checkGameOver)
+            setHighlightCell([])
+            return
+        }
         if (ai && game.turnColour === aiColour) {
             const moveString = game.board.moves.map(x => Move.getMoveString(x))
             myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour, pv])

@@ -44,6 +44,7 @@ const GameBar = () => {
                     <option value={4}>Depth 4</option>
                     <option value={5}>Depth 5</option>
                     <option value={6}>Depth 6</option>
+                    <option value={7}>Depth 7</option>
             </select>}
         </div>
     )

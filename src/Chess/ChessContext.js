@@ -38,6 +38,7 @@ export const ChessContextProvider = (props) => {
     const [ai, isAI] = useState(false)
     const [aiColour, setColour] = useState(Piece.BLACK)
     const [depth, setEngineDepth] = useState(2)
+    const [pv, setPv] = useState([])
 
     const setDepth = (depth) => {
         setEngineDepth(depth)
@@ -51,7 +52,7 @@ export const ChessContextProvider = (props) => {
         if (!ai) {
             if (game.turnColour === aiColour) { // white ai to start
                 const moveString = game.board.moves.map(x => Move.getMoveString(x))
-                myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
+                myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour, pv])
             }
             alert("Engine on")
         } else {
@@ -134,7 +135,7 @@ export const ChessContextProvider = (props) => {
             if (game.turnColour === aiColour) {
                 if (ai) {
                     const moveString = game.board.moves.map(x => Move.getMoveString(x))
-                    myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
+                    myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour, pv])
 
                 }
             }
@@ -147,7 +148,10 @@ export const ChessContextProvider = (props) => {
         }
         myWorker.onmessage = (message) => {
             if (message) {
-                const data = message.data
+                const payload = message.data
+                const data = payload[0]
+                const pv = payload[1]
+                setPv(pv)
                 if (data.isError) {
                     alert("Engine error: " + data.message)
                 } else {
@@ -168,7 +172,7 @@ export const ChessContextProvider = (props) => {
         setSelectedPiece(null)
         if (ai && game.turnColour === aiColour) {
             const moveString = game.board.moves.map(x => Move.getMoveString(x))
-            myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour])
+            myWorker.postMessage([game.board.getBoardString(), depth, moveString, aiColour, pv])
         }
     }
 

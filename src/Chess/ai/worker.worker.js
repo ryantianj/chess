@@ -4,6 +4,11 @@ const test = async (message) => {
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
     //https://stackoverflow.com/questions/29990116/alpha-beta-prunning-with-transposition-table-iterative-deepening
     // https://stackoverflow.com/questions/16500739/chess-high-branching-factor
+    // https://github.com/maksimKorzh/chess_programming/blob/master/src/bbc/collecting_pv/bbc.c
+    // https://github.com/kbjorklu/chess/blob/master/src/bitboard.js
+    //https://chess.stackexchange.com/questions/28160/moves-per-depth-in-search-engines
+    // Null move: https://web.archive.org/web/20071031095933/http://www.brucemo.com/compchess/programming/nullmove.htm
+    // https://github.com/maksimKorzh/chess_programming/blob/master/src/bbc/null_move_pruning/bbc.c
     // TODO: check if endgame before running search, set score tables before search, done after set board string
     // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
     // TODO: update piece score tables based on position before running search, done after set board string
@@ -12,13 +17,29 @@ const test = async (message) => {
     // rook penalty for trap by king, bonus for open file, bonus for each missing pawn
     // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
     const mem = new Map() // for killer moves
+    const MAX_DEPTH = 10
     let whiteCanCastle = true
     let blackCanCastle = true
-    const ab =  (boardString, depth, moveString, colour) => {
+    const pv_length = Array.from({length: MAX_DEPTH}, (x) => 0);
+    const pv_table = Array.from({length: MAX_DEPTH}, (x) => Array.from({length: MAX_DEPTH}, (x) => 0))
+    let currentPv = []
+    let startTime;
+    const MAX_TIME = 20000 // 20 seconds
+    const CHECK_THRESHOLD = 100000 // power of 2
+    let nodes = 0
+    let branch = 0
+    const NULL_MOVE_R = 2
+    const ab =  (boardString, depth, moveString, colour, pv) => {
+        let bestMove;
         const copyBoard = new Board()
         copyBoard.setBoardString(boardString)
-        // const start = performance.now()
         copyBoard.moves = moveString.map(x => Move.parseMove(copyBoard, x))
+        // set pv from previous iteration
+        for (let i = 2; i < pv.length; i++) { // first two moves would have been made
+            pv_table[0][i - 2] = Move.parseMove(copyBoard, pv[i])
+        }
+        const prev = pv_table[0]
+        currentPv = [...prev]
         const isEndGame = copyBoard.isEndGame()
         if (isEndGame) {
             console.log("endgame")
@@ -28,46 +49,75 @@ const test = async (message) => {
         for (let i = 1; i < depth; i++) {
             mem.set(i, [null, null, null]) // max number of killer moves
         }
-        const result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, mem)
-        // const result = rootNegaMax(depth, copyBoard, Piece.BLACK, Piece.BLACK)
-        // const end = performance.now()
+        startTime = performance.now()
+        let result
+        for (let i = 2; i <= depth; i+=2) { // iterative deepening
+            result = miniMax(copyBoard, i, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, mem, 0)
+            bestMove = pv_table[0][0]
+            const prev = pv_table[0]
+            currentPv = [...prev]
+            console.log(i, "Score", result[1], pv_table[0][0].newCell)
+        }
+        // result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, mem, 0)
+        const end = performance.now()
         // console.log(end - start, totalMoves, nodes)
+        const arr = []
+        for (let i = 0; i < depth; i++) {
+            if (pv_table[0][i] === 0) {
+                break
+            }
+            arr.push(pv_table[0][i].getMoveString())
+        }
+        console.log(end - startTime, nodes, branch)
         // console.log("eval", nodes)
-        console.log("Score", result[1])
-        return result[0] // should be a move
+
+
+        return [bestMove.getMoveString(), arr] // should be a move
     }
 
-    const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer, mem) => {
+    const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer, mem, ply) => {
+        if (nodes % CHECK_THRESHOLD === 0) {
+            if (performance.now() - startTime > MAX_TIME) {
+                return [pv_table[0][0], -99999]
+            }
+        }
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
-        moves.sort(sortMoves)
+        moveOrderRoot(moves, depth, ply)
         let bestMove;
         if (currentPlayer === maxPlayer) {
             let maxEval = -90000
-            let illegal = 0
+            let legal = 0
             for (let i = 0; i < moves.length; i++) {
                 const move = moves[i]
                 board.movePiece(move.piece, move)
                 if (board.isIllegal(currentPlayer, move)) {
                     board.undoMove()
-                    illegal++
+
                     continue
                 }
-
+                legal++
                 if (bestMove === undefined) {
                     bestMove = move
                 }
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem, ply + 1, legal === 1)
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
                     bestMove = move
+                    pv_table[ply][ply] = move
+                    for (let next_ply = ply + 1; next_ply < pv_length[ply + 1]; next_ply++) {
+                        // copy move from deeper ply into a current ply's line
+                        pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
+                    }
+                    // adjust PV length
+                    pv_length[ply] = pv_length[ply + 1];
                 }
                 alpha = Math.max(alpha, currentEval)
                 if (beta <= alpha) {
                     break
                 }
             }
-            if (illegal === moves.length) { // TODO: check stalemate
+            if (legal === 0) { // TODO: check stalemate
                 if (board.isCheck(currentPlayer)) {
                     return [null, -90000]
                 }
@@ -76,30 +126,37 @@ const test = async (message) => {
             return [bestMove, maxEval]
         } else {
             let minEval = 90000
-            let illegal = 0
+            let legal = 0
             for (let i = 0; i < moves.length; i++) {
                 const move = moves[i]
                 board.movePiece(move.piece, move)
                 if (board.isIllegal(currentPlayer, move)) {
                     board.undoMove()
-                    illegal++
                     continue
                 }
+                legal++
                 if (bestMove === undefined) {
                     bestMove = move
                 }
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem)
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem, ply + 1, legal === 1)
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval
                     bestMove = move
+                    pv_table[ply][ply] = move
+                    for (let next_ply = ply + 1; next_ply < pv_length[ply + 1]; next_ply++) {
+                        // copy move from deeper ply into a current ply's line
+                        pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
+                    }
+                    // adjust PV length
+                    pv_length[ply] = pv_length[ply + 1];
                 }
                 beta = Math.min(beta, currentEval)
                 if (beta <= alpha) {
                     break
                 }
             }
-            if (illegal === moves.length) {
+            if (legal === 0) {
                 if (board.isCheck(currentPlayer)) {
                     return [null, 90000]
                 }
@@ -109,34 +166,54 @@ const test = async (message) => {
             return [bestMove, minEval]
         }
     }
-    const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer, prevMoves, mem) => {
+    const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer, prevMoves, mem, ply, isLeftMost) => {
+        if (nodes % CHECK_THRESHOLD === 0) {
+            if (performance.now() - startTime > MAX_TIME) {
+                return -99999
+            }
+        }
+        let branchLocal = 0
+        nodes++
         const MAX_KILLER = 2
-        if (depth === 0) {
+        pv_length[ply] = ply
+        if (depth <= 0) {
             let result
-            if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
-                result = quiesce(alpha, beta, board, currentPlayer, 1, prevMoves)
+            if (false) {
+                result = quiesce(alpha, beta, board, currentPlayer, 2, prevMoves)
             } else {
                 result = board.getScore(maxPlayer, prevMoves)
             }
             return result
         }
+        const nullMoveVal =  miniMaxCore(board, depth - 1 - NULL_MOVE_R, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves, mem, ply + 1 + NULL_MOVE_R, false)
+        if (nullMoveVal >= beta) {
+            return beta
+        }
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
-        moveOrder(moves, mem, depth)
+        moveOrder(moves, mem, depth, ply, isLeftMost)
         if (currentPlayer === maxPlayer) {
             let maxEval = -30000
-            let illegal = 0
+            let legal = 0
             for (let i = 0; i < moves.length; i++) {
                 const move = moves[i]
                 board.movePiece(move.piece, move)
                 if (board.isIllegal(currentPlayer, move)) {
                     board.undoMove()
-                    illegal++
                     continue
                 }
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem)
+                legal++
+                branchLocal++
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, moves, mem, ply + 1, legal === 1)
                 board.undoMove()
                 if (currentEval > maxEval) {
                     maxEval = currentEval
+                    pv_table[ply][ply] = move
+                    for (let next_ply = ply + 1; next_ply < pv_length[ply + 1]; next_ply++) {
+                        // copy move from deeper ply into a current ply's line
+                        pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
+                    }
+                    // adjust PV length
+                    pv_length[ply] = pv_length[ply + 1];
                 }
                 if (currentEval > alpha) {
                     alpha = currentEval
@@ -156,7 +233,8 @@ const test = async (message) => {
                     break
                 }
             }
-            if (illegal === moves.length) {
+            branch = (branch + branchLocal) / 2
+            if (legal === 0) {
                 if (board.isCheck(currentPlayer)) {
                     return -30000 * depth // faster checkmates
                 }
@@ -165,20 +243,27 @@ const test = async (message) => {
             return maxEval
         } else {
             let minEval = 30000
-            let illegal = 0
+            let legal = 0
             for (let i = 0; i < moves.length; i++) {
                 const move = moves[i]
                 board.movePiece(move.piece, move)
                 if (board.isIllegal(currentPlayer, move)) {
                     board.undoMove()
-                    illegal++
                     continue
                 }
-
-                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves, mem)
+                legal++
+                branchLocal++
+                const currentEval = miniMaxCore(board, depth - 1, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves, mem, ply +1, legal === 1)
                 board.undoMove()
                 if (currentEval < minEval) {
                     minEval = currentEval
+                    pv_table[ply][ply] = move
+                    for (let next_ply = ply + 1; next_ply < pv_length[ply + 1]; next_ply++) {
+                        // copy move from deeper ply into a current ply's line
+                        pv_table[ply][next_ply] = pv_table[ply + 1][next_ply];
+                    }
+                    // adjust PV length
+                    pv_length[ply] = pv_length[ply + 1];
                 }
 
                 if (currentEval < beta) {
@@ -199,7 +284,8 @@ const test = async (message) => {
                     break
                 }
             }
-            if (illegal === moves.length) {
+            branch = (branch + branchLocal) / 2
+            if (legal === 0) {
                 if (board.isCheck(currentPlayer)) {
                     return 30000 * depth
                 }
@@ -210,9 +296,44 @@ const test = async (message) => {
         }
     }
 
-    const moveOrder = (moves, mem, depth) => {
+    const moveOrderRoot = (moves, depth, ply) => {
+        const sortMovesO = (a, b) => {
+            const pvMove = currentPv[ply]
+            if (pvMove !== 0 && isEqualMove(a, pvMove)) {
+                return -1
+            } else if (pvMove !== 0 && isEqualMove(b, pvMove)) {
+                return 1
+            }
+            if (a.ate !== null && b.ate !== null) {
+                const aScore = a.piece.points - a.ate.points
+                const bScore = b.piece.points - b.ate.points
+                return aScore < bScore ? -1: 1
+            } else {
+                if (a.ate !== null) {
+                    return -1
+                } else if (b.ate !== null) {
+                    return 1
+                }
+                const aScore = a.piece.colour === Piece.WHITE ? a.piece.whiteScore[a.newCell.row][a.newCell.col] : a.piece.blackScore[a.newCell.row][a.newCell.col]
+                const bScore = b.piece.colour === Piece.WHITE ? b.piece.whiteScore[b.newCell.row][b.newCell.col] : b.piece.blackScore[b.newCell.row][b.newCell.col]
+                return aScore < bScore ? 1: -1
+
+            }
+        }
+        moves.sort(sortMovesO)
+    }
+
+    const moveOrder = (moves, mem, depth, ply, isLeftMost) => {
 
         const sortMovesO = (a, b) => {
+            const pvMove = currentPv[ply]
+            if (isLeftMost && pvMove !== 0) {
+                if (isEqualMove(a, pvMove)) {
+                    return -1
+                } else if (isEqualMove(b, pvMove)) {
+                    return 1
+                }
+            }
             if (a.ate !== null && b.ate !== null) {
                 const aScore = a.piece.points - a.ate.points
                 const bScore = b.piece.points - b.ate.points
@@ -1725,12 +1846,13 @@ const test = async (message) => {
         }
     }
 
-        try {
+        // try {
             const data = message.data
             const boardString = data[0]
             const depth = data[1]
             const moveString = data[2]
             const colour = data[3]
+            const pv = data[4]
             totalMoves = moveString.length
             if (totalMoves === 0) {
                 if (colour === Piece.WHITE) {
@@ -1755,16 +1877,16 @@ const test = async (message) => {
 
                     postMessage(moves[randomIndex].getMoveString())
                 } else {
-                    const nextMove = ab(boardString, depth, moveString, colour)
-                    postMessage(nextMove.getMoveString())
+                    const nextMove = ab(boardString, depth, moveString, colour, pv)
+                    postMessage(nextMove)
                 }
             } else {
-                const nextMove = ab(boardString, depth, moveString, colour)
-                postMessage(nextMove.getMoveString())
+                const nextMove = ab(boardString, depth, moveString, colour, pv)
+                postMessage(nextMove)
             }
-        } catch (e) {
-            postMessage({isError: true, message:"Error: " + e})
-        }
+        // } catch (e) {
+        //     postMessage({isError: true, message:"Error: " + e})
+        // }
 
 }
 // eslint-disable-next-line no-restricted-globals,no-undef

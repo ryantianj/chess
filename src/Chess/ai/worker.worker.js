@@ -30,6 +30,7 @@ const test = async (message) => {
     let branch = 0
     const NULL_MOVE_R = 2
     const MAX_KILLER = 2
+    let isEndGame = false
     const ab =  (boardString, depth, moveString, colour, pv) => {
         let bestMove;
         const copyBoard = new Board()
@@ -41,7 +42,7 @@ const test = async (message) => {
         }
         const prev = pv_table[0]
         currentPv = [...prev]
-        const isEndGame = copyBoard.isEndGame()
+        isEndGame = copyBoard.isEndGame()
         if (isEndGame) {
             console.log("endgame")
             copyBoard.setEndGame()
@@ -132,6 +133,7 @@ const test = async (message) => {
             return [bestMove, maxEval]
         }
     }
+    let isNullMove = false
     const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer, prevMoves, mem, ply, isLeftMost) => {
         if (nodes % CHECK_THRESHOLD === 0) {
             if (performance.now() - startTime > MAX_TIME) {
@@ -144,19 +146,21 @@ const test = async (message) => {
         pv_length[ply] = ply
         if (depth <= 0) {
             let result
-            if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
+            if (maxPlayer === currentPlayer && !isNullMove && board.moves.slice(-1)[0].ate !== null) { // only for max player
                 result = quiesce(alpha, beta, board, currentPlayer, 2, prevMoves)
             } else {
                 result = board.getScore(maxPlayer, prevMoves)
             }
             return result
         }
-        // if (depth >= 1 + NULL_MOVE_R && !board.isCheck(currentPlayer)) {
-        //     const nullMoveVal =  miniMaxCore(board, depth - 1 - NULL_MOVE_R, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves, mem, ply + 1 + NULL_MOVE_R, false)
-        //     if (nullMoveVal >= beta) {
-        //         return beta
-        //     }
-        // }
+        if (depth >= 2 + NULL_MOVE_R && !isEndGame && !isNullMove && !board.isCheck(currentPlayer)) {
+            isNullMove = true
+            const nullMoveVal =  miniMaxCore(board, depth - 1 - NULL_MOVE_R, beta - 1, beta, maxPlayer, currentPlayer * -1, prevMoves, mem, ply + 1 + NULL_MOVE_R, false)
+            isNullMove = false
+            if (nullMoveVal >= beta) {
+                return beta
+            }
+        }
         const moves = board.getAllMoves(currentPlayer) // TODO: time consuming
         moveOrder(moves, mem, depth, ply, isLeftMost)
         if (currentPlayer === maxPlayer) {
@@ -1014,7 +1018,7 @@ const test = async (message) => {
          */
         getScore = (colour, prevMoves) => {
             const positionalScore = this.scanSquaresScore()
-            return (positionalScore + prevMoves.length * 5) * colour * -1
+            return (positionalScore + prevMoves.length * 3) * colour * -1
         }
 
         getBoardString = () => {

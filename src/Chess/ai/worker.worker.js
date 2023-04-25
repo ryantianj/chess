@@ -52,7 +52,7 @@ const test = async (message) => {
         }
         startTime = performance.now()
         let result
-        for (let i = 2; i <= depth; i++) { // iterative deepening
+        for (let i = 1; i <= depth; i++) { // iterative deepening
             result = miniMax(copyBoard, i, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, mem, 0)
             const currentEnd = performance.now()
             if (currentEnd - startTime < MAX_TIME) { // did not run out of time
@@ -60,7 +60,7 @@ const test = async (message) => {
                 currentPv = [...prev]
             }
             bestMove = currentPv[0]
-            console.log(i, "Score", result[1], pv_table[0][0].newCell)
+            console.log(i, "Score", result[1], currentPv[0].newCell)
         }
         // result = miniMax(copyBoard, depth, -Number.MAX_VALUE, Number.MAX_VALUE, colour, colour, mem, 0)
         const end = performance.now()
@@ -142,16 +142,16 @@ const test = async (message) => {
         nodes++
 
         pv_length[ply] = ply
-        if (depth === 0) {
+        if (depth <= 0) {
             let result
-            if (false) {
+            if (maxPlayer === currentPlayer && board.moves.slice(-1)[0].ate !== null) {
                 result = quiesce(alpha, beta, board, currentPlayer, 2, prevMoves)
             } else {
                 result = board.getScore(maxPlayer, prevMoves)
             }
             return result
         }
-        // if (depth >= 1 + NULL_MOVE_R) {
+        // if (depth >= 1 + NULL_MOVE_R && !board.isCheck(currentPlayer)) {
         //     const nullMoveVal =  miniMaxCore(board, depth - 1 - NULL_MOVE_R, alpha, beta, maxPlayer, currentPlayer * -1, prevMoves, mem, ply + 1 + NULL_MOVE_R, false)
         //     if (nullMoveVal >= beta) {
         //         return beta
@@ -1836,7 +1836,7 @@ const test = async (message) => {
                     ]
                     const randomIndex = Math.round(Math.random() * (moves.length - 1))
 
-                    postMessage(moves[randomIndex].getMoveString())
+                    postMessage([moves[randomIndex].getMoveString(), pv])
                 }
             } else if (totalMoves === 1) {
                 // equal chance to play c5 / e5, in response to e4
@@ -1848,7 +1848,7 @@ const test = async (message) => {
                     ]
                     const randomIndex = Math.round(Math.random() * (moves.length - 1))
 
-                    postMessage(moves[randomIndex].getMoveString())
+                    postMessage([moves[randomIndex].getMoveString(), pv])
                 } else {
                     const nextMove = ab(boardString, depth, moveString, colour, pv)
                     postMessage(nextMove)
@@ -1858,7 +1858,7 @@ const test = async (message) => {
                 postMessage(nextMove)
             }
         // } catch (e) {
-        //     postMessage({isError: true, message:"Error: " + e})
+        //     postMessage([{isError: true, message:"Error: " + e}])
         // }
 
 }

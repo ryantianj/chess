@@ -276,6 +276,12 @@ const test = async (message) => {
             } else if (pvMove !== 0 && isEqualMove(b, pvMove)) {
                 return 1
             }
+            if (a.castle.isCastle) {
+                return -1
+            }
+            if (b.castle.isCastle) {
+                return 1
+            }
             if (a.ate !== null && b.ate !== null) {
                 const aScore = a.piece.points - a.ate.points
                 const bScore = b.piece.points - b.ate.points
@@ -305,6 +311,12 @@ const test = async (message) => {
                 } else if (isEqualMove(b, pvMove)) {
                     return 1
                 }
+            }
+            if (a.castle.isCastle) {
+                return -1
+            }
+            if (b.castle.isCastle) {
+                return 1
             }
             if (a.ate !== null && b.ate !== null) {
                 const aScore = a.piece.points - a.ate.points
@@ -818,10 +830,6 @@ const test = async (message) => {
                 const prevRow = move.oldCell.row
                 const prevCol = move.oldCell.col
                 const piece = this.board[move.newCell.row][move.newCell.col]
-                if (piece === null) {
-                    console.log(this.getBoardString(), move)
-                }
-
                 this.board[prevRow][prevCol] = piece
                 piece.cell.row = prevRow
                 piece.cell.col = prevCol
@@ -1316,14 +1324,15 @@ const test = async (message) => {
                     moves.push(move)
                 }
             }
+            const canCastle = this.colour === Piece.WHITE ? whiteCanCastle : blackCanCastle
             // king and rook has not moved, illegal check later
-            if (whiteCanCastle && board.castlingSquaresIsEmpty(this.colour, King.KING_SIDE) && !board.rookHasMoved(this.colour, King.KING_SIDE) && !board.kingHasMoved(this.colour)) {
+            if (canCastle && board.castlingSquaresIsEmpty(this.colour, King.KING_SIDE) && !board.rookHasMoved(this.colour, King.KING_SIDE) && !board.kingHasMoved(this.colour)) {
                 const row = this.colour === Piece.BLACK ? 0 : 7
                 const col = 6
                 moves.push(new Move(new Cell(currentRow, currentCol), new Cell(row, col), this, false,
                     {isCastle: true, rook: new Move(new Cell(row, 7), new Cell(row, 5), board.getPiece(row, 7))}))
             }
-            if (blackCanCastle && board.castlingSquaresIsEmpty(this.colour, King.QUEEN_SIDE) && !board.rookHasMoved(this.colour, King.QUEEN_SIDE) && !board.kingHasMoved(this.colour)) {
+            if (canCastle && board.castlingSquaresIsEmpty(this.colour, King.QUEEN_SIDE) && !board.rookHasMoved(this.colour, King.QUEEN_SIDE) && !board.kingHasMoved(this.colour)) {
                 const row = this.colour === Piece.BLACK ? 0 : 7
                 const col = 2
                 moves.push(new Move(new Cell(currentRow, currentCol), new Cell(row, col), this, false,

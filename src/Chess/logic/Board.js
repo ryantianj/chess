@@ -301,7 +301,7 @@ class Board {
     }
     castlingSquaresUnderAttack = (colour, side, attacked) => { // includes the king himself
         const row = colour === Piece.BLACK ? 0 : 7
-        const cols = side === King.KING_SIDE ? [4,5,6] : [1,2,3,4]
+        const cols = side === King.KING_SIDE ? [4,5,6] : [2,3,4]
         for (const col of cols) {
             for (const move of attacked) {
                 if (move.newCell.row === row && move.newCell.col === col) {

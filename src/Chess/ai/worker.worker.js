@@ -935,10 +935,10 @@ const test = async (message) => {
                         }
                     }
                 } else {
-                    for (const opp of moves) {
+                    for (const opp of moves) { // queenside
                         const moveRow = opp.newCell.row
                         const moveCol = opp.newCell.col
-                        if (moveRow === row && (moveCol === 1 || moveCol === 2 || moveCol === 3 || moveCol === 4)) {
+                        if (moveRow === row && (moveCol === 2 || moveCol === 3 || moveCol === 4)) {
                             return true
                         }
                     }

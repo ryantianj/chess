@@ -18,8 +18,10 @@ const test = async (message) => {
     // pawn, increase value +30 if past pawn (no pawns of opposing colour on the 3 cols), decrease value if doubled (-10)
     const mem = new Map() // for killer moves
     const MAX_DEPTH = 10
-    let whiteCanCastle = true
-    let blackCanCastle = true
+    let whiteCanCastleKingSide = true
+    let whiteCanCastleQueenSide = true
+    let blackCanCastleKingSide = true
+    let blackCanCastleQueenSide = true
     const pv_length = Array.from({length: MAX_DEPTH}, (x) => 0);
     const pv_table = Array.from({length: MAX_DEPTH}, (x) => Array.from({length: MAX_DEPTH}, (x) => 0))
     let currentPv = []
@@ -527,11 +529,25 @@ const test = async (message) => {
         // update values of pieces
         updatePieceValues = (totalMoves) => {
             // set if colour can castle here
-            if (this.kingHasMoved(Piece.WHITE) || this.rookHasMoved(Piece.WHITE, King.KING_SIDE) || this.rookHasMoved(Piece.WHITE, King.QUEEN_SIDE)) {
-                whiteCanCastle = false
+            if (this.kingHasMoved(Piece.WHITE)) {
+                whiteCanCastleKingSide = false
+                whiteCanCastleQueenSide = false
             }
-            if (this.kingHasMoved(Piece.BLACK) || this.rookHasMoved(Piece.BLACK, King.KING_SIDE) || this.rookHasMoved(Piece.BLACK, King.QUEEN_SIDE)) {
-                blackCanCastle = false
+            if (this.rookHasMoved(Piece.WHITE, King.KING_SIDE)) {
+                whiteCanCastleKingSide = false
+            }
+            if (this.rookHasMoved(Piece.WHITE, King.QUEEN_SIDE)) {
+                whiteCanCastleQueenSide = false
+            }
+            if (this.kingHasMoved(Piece.BLACK)) {
+                blackCanCastleKingSide = false
+                blackCanCastleQueenSide = false
+            }
+            if (this.rookHasMoved(Piece.BLACK, King.KING_SIDE)) {
+                blackCanCastleKingSide = false
+            }
+            if (this.rookHasMoved(Piece.BLACK, King.QUEEN_SIDE)) {
+                blackCanCastleQueenSide = false
             }
             const MOVE_THRESHOLD = 12
             // for knight, -5 per missing pawn of any colour done
@@ -1324,15 +1340,16 @@ const test = async (message) => {
                     moves.push(move)
                 }
             }
-            const canCastle = this.colour === Piece.WHITE ? whiteCanCastle : blackCanCastle
+            const canCastleKingSide = this.colour === Piece.WHITE ? whiteCanCastleKingSide : blackCanCastleKingSide
+            const canCastleQueenSide = this.colour === Piece.WHITE ? whiteCanCastleQueenSide : blackCanCastleQueenSide
             // king and rook has not moved, illegal check later
-            if (canCastle && board.castlingSquaresIsEmpty(this.colour, King.KING_SIDE) && !board.rookHasMoved(this.colour, King.KING_SIDE) && !board.kingHasMoved(this.colour)) {
+            if (canCastleKingSide && board.castlingSquaresIsEmpty(this.colour, King.KING_SIDE) && !board.rookHasMoved(this.colour, King.KING_SIDE) && !board.kingHasMoved(this.colour)) {
                 const row = this.colour === Piece.BLACK ? 0 : 7
                 const col = 6
                 moves.push(new Move(new Cell(currentRow, currentCol), new Cell(row, col), this, false,
                     {isCastle: true, rook: new Move(new Cell(row, 7), new Cell(row, 5), board.getPiece(row, 7))}))
             }
-            if (canCastle && board.castlingSquaresIsEmpty(this.colour, King.QUEEN_SIDE) && !board.rookHasMoved(this.colour, King.QUEEN_SIDE) && !board.kingHasMoved(this.colour)) {
+            if (canCastleQueenSide && board.castlingSquaresIsEmpty(this.colour, King.QUEEN_SIDE) && !board.rookHasMoved(this.colour, King.QUEEN_SIDE) && !board.kingHasMoved(this.colour)) {
                 const row = this.colour === Piece.BLACK ? 0 : 7
                 const col = 2
                 moves.push(new Move(new Cell(currentRow, currentCol), new Cell(row, col), this, false,

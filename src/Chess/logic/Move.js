@@ -1,6 +1,9 @@
 import Cell from "./Cell";
 import Queen from "./Pieces/Queen";
 
+/**
+ * This class represents a chess move
+ */
 class Move {
     oldCell
     newCell

@@ -2,6 +2,9 @@ import Board from "./Board";
 import Player from "./Player";
 import Piece from "./Piece";
 
+/**
+ * This class represents a chess game
+ */
 class Game {
     // game has a board, game has players, game has turns, game has time
     turnColour = Piece.WHITE
@@ -36,12 +39,6 @@ class Game {
         if (isUndo) {
             this.turnColour = this.turnColour === Piece.WHITE ? Piece.BLACK : Piece.WHITE
         }
-    }
-
-    copyBoard = () => {
-        const newBoard = new Board()
-        newBoard.setBoard(this.board.copyBoard())
-        return newBoard
     }
 
 }

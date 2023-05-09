@@ -1,4 +1,10 @@
 let totalMoves = 0
+/**
+ * This function encapsulates the entire AI logic
+ * Note: Entire board logic is different from the UI board logic for performance reasons
+ * @param message data from frontend, which includes: board string representation, depth of search, moves so far, AI colour, principal variation
+ * @return {Promise<void>} best move deemed by the AI
+ */
 const test = async (message) => {
    // https://chess.stackexchange.com/questions/40362/my-transposition-tables-implementation-slows-down-alpha-beta-pruning
     // https://github.com/maksimKorzh/chess_programming/blob/master/src/negamax/tutorials/alpha-beta_quiescence_search/chess.c
@@ -33,6 +39,15 @@ const test = async (message) => {
     const NULL_MOVE_R = 2
     const MAX_KILLER = 2
     let isEndGame = false
+    /**
+     * Alpha beta minmax search driver function
+     * @param boardString board representation in string format
+     * @param depth AI depth
+     * @param moveString moves so far, represented by an array of strings
+     * @param colour AI colour, black or white
+     * @param pv principal variation moves, represented by an array of strings, used for move ordering
+     * @return {[*,*[]]} the best move in string representation, and principal variation
+     */
     const ab =  (boardString, depth, moveString, colour, pv) => {
         let bestMove;
         const copyBoard = new Board()
@@ -83,6 +98,18 @@ const test = async (message) => {
         return [bestMove.getMoveString(), arr] // should be a move
     }
 
+    /**
+     * Driver function for AI logic
+     * @param board board object
+     * @param depth current depth of search
+     * @param alpha for alpha pruning
+     * @param beta for beta pruning
+     * @param maxPlayer colour of maximising player (AI colour)
+     * @param currentPlayer colour of current player (black or white)
+     * @param mem memory, for memoization of data
+     * @param ply half move counter (inverse of depth)
+     * @return {[undefined,number]|[null,number]} returns [move, score of move]
+     */
     const miniMax = (board, depth, alpha, beta, maxPlayer, currentPlayer, mem, ply) => {
         pv_length[ply] = ply
         if (nodes % CHECK_THRESHOLD === 0) {
@@ -136,6 +163,7 @@ const test = async (message) => {
         }
     }
     let isNullMove = false
+    // This function is the same as the driver function, but does not return the best move
     const miniMaxCore = (board, depth, alpha, beta, maxPlayer, currentPlayer, prevMoves, mem, ply, isLeftMost) => {
         if (nodes % CHECK_THRESHOLD === 0) {
             if (performance.now() - startTime > MAX_TIME) {
@@ -270,6 +298,13 @@ const test = async (message) => {
         }
     }
 
+    /**
+     * Used for sorting the moves in the driver function,
+     * in this order: PV moves, castling moves, winning captures, losing captures, piece square table values
+     * @param moves
+     * @param depth
+     * @param ply
+     */
     const moveOrderRoot = (moves, depth, ply) => {
         const sortMovesO = (a, b) => {
             const pvMove = currentPv[ply]
@@ -303,6 +338,15 @@ const test = async (message) => {
         moves.sort(sortMovesO)
     }
 
+    /**
+     * Used for sorting the moves, in this order: PV moves, castling moves, winning captures, losing captures, piece square table values
+     * Different from moveOrderRoot as it only sorts PV moves in the leftmost branch
+     * @param moves moves to sort
+     * @param mem memorized killer moves
+     * @param depth depth remaining to search
+     * @param ply half move counter
+     * @param isLeftMost if current branch is left most
+     */
     const moveOrder = (moves, mem, depth, ply, isLeftMost) => {
 
         const sortMovesO = (a, b) => {
@@ -350,6 +394,12 @@ const test = async (message) => {
         moves.sort(sortMovesO)
     }
 
+    /**
+     * Check if two moves are equal
+     * @param a
+     * @param b
+     * @return {boolean}
+     */
     const isEqualMove = (a, b) => {
         if (a.newCell.row === b.newCell.row && a.newCell.col === b.newCell.col && a.oldCell.row === b.oldCell.row && a.oldCell.col === b.oldCell.col && a.piece.constructor === b.piece.constructor) {
             if (a.ate !== null && b.ate !== null) {
@@ -360,6 +410,12 @@ const test = async (message) => {
         return false
     }
 
+    /**
+     * Used for move ordering in quiescence search
+     * @param a move to sort
+     * @param b move to sort
+     * @return {number|number} order to sort moves
+     */
     const sortMoves = (a, b) => {
         if (a.ate !== null && b.ate !== null) {
             const aScore = a.piece.points - a.ate.points
@@ -378,10 +434,16 @@ const test = async (message) => {
         }
     }
 
-
-
-
-
+    /**
+     * Quiescence search to mitigate horizon effect
+     * @param alpha alpha value
+     * @param beta beta value
+     * @param board board object
+     * @param colour current player
+     * @param depth depth remaining
+     * @param prevMoves moves made in the previous ply
+     * @return {number|*|number} score of position
+     */
     const quiesce = (alpha, beta, board, colour, depth, prevMoves) => {
         const evaluation = board.getScore(colour, prevMoves)
         if (depth === 0) {
@@ -490,6 +552,10 @@ const test = async (message) => {
     //     return bestMove
     //
     // }
+
+    /**
+     * This class represents the board object, and contains all functions that can be performed on a chess board
+     */
     class Board {
         board;
 
@@ -498,6 +564,10 @@ const test = async (message) => {
             this.moves = []
         }
 
+        /**
+         * Returns a new chess bord with pieces in their starting positions in a conventional chess game
+         * @return {((Rook|Knight|Bishop|Queen|King)[]|Pawn[]|*[])[]}
+         */
         newBoard = () => {
             const startingBoard = [
                 [new Rook(Piece.BLACK, new Cell(0,0)), new Knight(Piece.BLACK, new Cell(0, 1)), new Bishop(Piece.BLACK, new Cell(0, 2)), new Queen(Piece.BLACK, new Cell(0, 3)), new King(Piece.BLACK, new Cell(0, 4)), new Bishop(Piece.BLACK, new Cell(0, 5)), new Knight(Piece.BLACK, new Cell(0, 6)), new Rook(Piece.BLACK, new Cell(0,7))],
@@ -526,7 +596,7 @@ const test = async (message) => {
                 }
             }
         }
-        // update values of pieces
+        // update values of pieces, based on board state, game phase
         updatePieceValues = (totalMoves) => {
             // set if colour can castle here
             if (this.kingHasMoved(Piece.WHITE)) {
@@ -707,8 +777,8 @@ const test = async (message) => {
             }
         }
 
+        // Determines if the game is in endgame state. End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
         isEndGame = () => {
-            // End game defined by: either side has a queen + pawns only / either side has at most 2 minor pieces
             let countWhitePieces = 0
             let countBlackPieces = 0
             let countWhiteQueen = 0
@@ -736,6 +806,10 @@ const test = async (message) => {
                 || ((countWhitePieces <=3 && countWhiteQueen <= 0) || (countBlackPieces <=3  && countBlackQueen <= 0))
         }
 
+        /**
+         * Converts the string representation of a board to the array of objects representation of the board and sets the board
+         * @param boardString string representation of board
+         */
         setBoardString = (boardString) => {
             const newBoard = []
             for (let row = 0; row < 8; row++) {
@@ -770,19 +844,19 @@ const test = async (message) => {
             this.board = newBoard
         }
 
-        getBoardHash = () => {
-            let str = ""
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    if (!this.isEmpty(row, col)) {
-                        str += this.getPiece(row, col).getString()
-                    } else {
-                        str += " "
-                    }
-                }
-            }
-            return str
-        }
+        // getBoardHash = () => {
+        //     let str = ""
+        //     for (let row = 0; row < 8; row++) {
+        //         for (let col = 0; col < 8; col++) {
+        //             if (!this.isEmpty(row, col)) {
+        //                 str += this.getPiece(row, col).getString()
+        //             } else {
+        //                 str += " "
+        //             }
+        //         }
+        //     }
+        //     return str
+        // }
 
         /**
          * Returns the board represented by the array
@@ -790,6 +864,7 @@ const test = async (message) => {
         getBoard = () => {
             return this.board
         }
+
         /**
          * Returns piece at the coordinates
          */
@@ -806,22 +881,31 @@ const test = async (message) => {
             }
             return this.board[row][col] === null
         }
-        isUnderCheck = (colour) => {
-            return false
-        }
+
+        /**
+         * Checks if coordinate is out of bounds
+         */
         isOutSide = (row, col) => {
             return row < 0 || col < 0 || row > 7 || col > 7
         }
 
+        /**
+         * Checks if piece can be eaten (different color)
+         */
         canEat = (row, col, colour) => {
             return !this.isOutSide(row, col) && !this.isEmpty(row, col) && this.getPiece(row, col).colour !== colour
         }
 
-
+        /**
+         * Checks if cell is within the chess board, and is empty
+         */
         canMove = (row, col) => {
             return !this.isOutSide(row, col) && this.isEmpty(row, col)
         }
 
+        /**
+         * Checks if King can move to a square, must not have another king at the cell
+         */
         canKingMove = (row, col, colour) => {
             const directions = [[1,1], [-1,-1], [1,-1],[-1,1],[0,1], [1,0], [0,-1],[-1,0]]
             for (const direction of directions) {
@@ -835,11 +919,18 @@ const test = async (message) => {
             return true
         }
 
+        /**
+         * Moves a piece
+         */
         movePiece = (piece, move) => {
             move.piece.movePiece(move, this)
             this.moves.push(move)
         }
 
+        /**
+         * Undo a move
+         * @return {boolean}
+         */
         undoMove = () => {
             if (this.moves.length > 0) {
                 const move = this.moves.pop()
@@ -867,6 +958,9 @@ const test = async (message) => {
             return false
         }
 
+        /**
+         * Check if king has moved, for castling reasons
+         */
         kingHasMoved = (colour) => {
             for (let i = 0; i < this.moves.length; i++) {
                 const move = this.moves[i]
@@ -877,6 +971,9 @@ const test = async (message) => {
             return false
         }
 
+        /**
+         * Check if rook has moved, for castling reasons
+         */
         rookHasMoved = (colour, side) => {
             const row = colour === Piece.BLACK ? 0 : 7
             const col = side === King.KING_SIDE ? 7 : 0
@@ -891,6 +988,9 @@ const test = async (message) => {
             return false
         }
 
+        /**
+         * Check if squares between rook and king are empty for castling purposes
+         */
         castlingSquaresIsEmpty = (colour, side) => {
             const row = colour === Piece.BLACK ? 0 : 7
             const cols = side === King.KING_SIDE ? [5,6] : [1,2,3]
@@ -902,7 +1002,9 @@ const test = async (message) => {
             return true
         }
 
-        // returns if colour is under check, need check for castling
+        /**
+         * Check if a move is illegal: whether a king gets eaten or places a king under check
+         */
         isIllegal = (colour, move) => {
             // get colour king first
             let king;
@@ -986,11 +1088,8 @@ const test = async (message) => {
         }
 
         /**
-         * Checks if game is over for colour, means other colour wins
-         * @param colour
-         * @return {*[]}
+         * Returns all moves for a colour
          */
-
         getAllMoves = (colour) => {
             let squares = []
             for (let row = 0; row < 8; row++) {
@@ -1045,6 +1144,9 @@ const test = async (message) => {
             return (positionalScore + prevMoves.length * 3) * colour * -1
         }
 
+        /**
+         * get string representation of the board
+         */
         getBoardString = () => {
             const newBoard = []
             for (let row = 0; row < 8; row++) {
@@ -1072,6 +1174,10 @@ const test = async (message) => {
             this.col = col
         }
     }
+
+    /**
+     * This class represents a move made on a chess board
+     */
     class Move {
         oldCell
         newCell
@@ -1087,6 +1193,9 @@ const test = async (message) => {
             this.isPromotion = isPromotion
         }
 
+        /**
+         * Get string representation of a move
+         */
         getMoveString = () => {
             return {
                 oldCellRow: this.oldCell.row,
@@ -1107,6 +1216,10 @@ const test = async (message) => {
                 isPromotion: this.isPromotion
             }
         }
+
+        /**
+         * Converts a string representation of a move to a move object representation
+         */
         static parseMove = (board, data) => {
             const parseMove = new Move(
                 new Cell(data.oldCellRow, data.oldCellCol),
@@ -1128,6 +1241,10 @@ const test = async (message) => {
         }
 
     }
+
+    /**
+     * The class represents a chess piece
+     */
     class Piece {
         static WHITE = -1
         static BLACK = 1
@@ -1141,6 +1258,10 @@ const test = async (message) => {
             this.colour = colour // white or black
             this.cell = cell
         }
+
+        /**
+         * converts string representation of piece to board representation
+         */
         static parsePieceString = (pieceString) => {
             const pieceColour = pieceString.slice(0, 1)
             const actualColour = pieceColour === "w" ? Piece.WHITE : Piece.BLACK
@@ -1849,7 +1970,7 @@ const test = async (message) => {
         }
     }
 
-        // try {
+        try {
             const data = message.data
             const boardString = data[0]
             const depth = data[1]
@@ -1887,9 +2008,9 @@ const test = async (message) => {
                 const nextMove = ab(boardString, depth, moveString, colour, pv)
                 postMessage(nextMove)
             }
-        // } catch (e) {
-        //     postMessage([{isError: true, message:"Error: " + e}])
-        // }
+        } catch (e) {
+            postMessage([{isError: true, message:"Error: " + e}])
+        }
 
 }
 // eslint-disable-next-line no-restricted-globals,no-undef

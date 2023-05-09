@@ -63,6 +63,9 @@ const castle = [
     [new Rook(Piece.WHITE, new Cell(7,0)), new knight(Piece.WHITE, new Cell(7, 1)), new Bishop(Piece.WHITE, new Cell(7, 2)), new Queen(Piece.WHITE, new Cell(7, 3)), new King(Piece.WHITE, new Cell(7, 4)), new Bishop(Piece.WHITE, new Cell(7, 5)), new knight(Piece.WHITE, new Cell(7, 6)), new Rook(Piece.WHITE, new Cell(7,7))],
 ]
 
+/**
+ * This class represents a chess board
+ */
 class Board {
     #board;
 
@@ -72,6 +75,9 @@ class Board {
         this.testMoves = []
     }
 
+    /**
+     * Returns a new chess board with pieces in their starting positions
+     */
     newBoard = () => {
         const org = [
             [new Rook(Piece.BLACK, new Cell(0,0)), new knight(Piece.BLACK, new Cell(0, 1)), new Bishop(Piece.BLACK, new Cell(0, 2)), new Queen(Piece.BLACK, new Cell(0, 3)), new King(Piece.BLACK, new Cell(0, 4)), new Bishop(Piece.BLACK, new Cell(0, 5)), new knight(Piece.BLACK, new Cell(0, 6)), new Rook(Piece.BLACK, new Cell(0,7))],
@@ -85,22 +91,6 @@ class Board {
         ]
         const startingBoard = org
         return startingBoard
-    }
-
-    copyBoard = () => {
-        const newBoard = []
-        for (let row = 0; row < 8; row++) {
-            const newRow = []
-            for (let col = 0; col < 8; col++) {
-                newRow.push(this.clonePiece(this.#board[row][col]))
-            }
-            newBoard.push(newRow)
-        }
-        return newBoard
-    }
-
-    setBoard = (board) => {
-        this.#board = board
     }
 
     clonePiece = (piece) => {
@@ -142,25 +132,38 @@ class Board {
         }
         return this.#board[row][col] === null
     }
-    isUnderCheck = (colour) => {
-        return false
-    }
+
+    /**
+     * Returns if the cell is outside the chess board
+     */
     isOutSide = (row, col) => {
         return row < 0 || col < 0 || row > 7 || col > 7
     }
 
+    /**
+     * Returns if the pieces at cell can be eaten
+     */
     canEat = (row, col, colour) => {
         return !this.isOutSide(row, col) && !this.isEmpty(row, col) && this.getPiece(row, col).colour !== colour
     }
 
+    /**
+     * Returns if the piece at cell is defended or can be eaten
+     */
     canEatDefend = (row, col) => {
         return !this.isOutSide(row, col) && !this.isEmpty(row, col)
     }
 
+    /**
+     * Returns if the cell can be moved to
+     */
     canMove = (row, col) => {
         return !this.isOutSide(row, col) && this.isEmpty(row, col)
     }
 
+    /**
+     * Returns if King can move to a cell
+     */
     canKingMove = (row, col, colour) => {
         const directions = [[1,1], [-1,-1], [1,-1],[-1,1],[0,1], [1,0], [0,-1],[-1,0]]
         for (const direction of directions) {
@@ -192,6 +195,10 @@ class Board {
         return squares
     }
 
+    /**
+     * Moves a piece
+     */
+
     movePiece = (piece, move) => {
         const result =  this.getPiece(piece.cell.row, piece.cell.col).movePiece(move, this)
         move.isCheck = this.isCheck(move.piece.colour * -1)
@@ -200,12 +207,18 @@ class Board {
         return result
     }
 
+    /**
+     * Moves a piece, to be undone later (for generating legal moves)
+     */
     testMovePiece = (piece, move) => {
         const result =  this.getPiece(piece.cell.row, piece.cell.col).movePiece(move, this)
         this.testMoves.push(move)
         return result
     }
 
+    /**
+     * Undo a move (for generating legal moves)
+     */
     testUndoMove = () => {
         if (this.testMoves.length > 0) {
             const move = this.testMoves.pop()
@@ -236,6 +249,9 @@ class Board {
         return false
     }
 
+    /**
+     * Undo a move (on the chess board)
+     */
     undoMove = () => {
         if (this.moves.length > 0) {
             const move = this.moves.pop()
@@ -266,6 +282,9 @@ class Board {
         return false
     }
 
+    /**
+     * Check if king has moved, for castling purposes
+     */
     kingHasMoved = (colour) => {
         for (const move of this.moves) {
             if (move.piece instanceof King && move.piece.colour === colour) {
@@ -275,6 +294,9 @@ class Board {
         return false
     }
 
+    /**
+     * Check if rook has moved, for castling purposes
+     */
     rookHasMoved = (colour, side) => {
         const row = colour === Piece.BLACK ? 0 : 7
         const col = side === King.KING_SIDE ? 7 : 0
@@ -289,6 +311,9 @@ class Board {
         return false
     }
 
+    /**
+     * Check if squares between rook and king are empty, for castling purposes
+     */
     castlingSquaresIsEmpty = (colour, side) => {
         const row = colour === Piece.BLACK ? 0 : 7
         const cols = side === King.KING_SIDE ? [5,6] : [1,2,3]
@@ -299,6 +324,10 @@ class Board {
         }
         return true
     }
+
+    /**
+     * Check if squares between rook and king are under attack, for castling purposes
+     */
     castlingSquaresUnderAttack = (colour, side, attacked) => { // includes the king himself
         const row = colour === Piece.BLACK ? 0 : 7
         const cols = side === King.KING_SIDE ? [4,5,6] : [2,3,4]
@@ -312,6 +341,9 @@ class Board {
         return false
     }
 
+    /**
+     * Check if king can castle
+     */
     canCastle = (colour, side, attacked) => {
         // console.log(this.castlingSquaresIsEmpty(colour, side) , !this.castlingSquaresUnderAttack(colour, side, attacked)
         //     , !this.rookHasMoved(colour, side) , !this.kingHasMoved(colour))
@@ -319,6 +351,9 @@ class Board {
         && !this.rookHasMoved(colour, side) && !this.kingHasMoved(colour)
     }
 
+    /**
+     * Promotes a pawn to the selected piece
+     */
     promotePiece = (piece) => {
         const row = piece.cell.row
         const col = piece.cell.col
@@ -351,18 +386,6 @@ class Board {
         }
         this.testUndoMove()
         return false
-    }
-    getAllMoves = (colour) => {
-        let moves = []
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
-                const piece = this.#board[row][col]
-                if (piece !== null && this.getPiece(row, col).colour === colour) {
-                    moves = moves.concat(this.getPiece(row, col).getMoves(this))
-                }
-            }
-        }
-        return moves
     }
 
     /**
@@ -405,6 +428,9 @@ class Board {
         return {isGameOver: false, message: ""}
     }
 
+    /**
+     * Gets all moves on the board
+     */
     getAllMoves = (colour) => {
         let squares = []
         for (let row = 0; row < 8; row++) {
@@ -419,6 +445,9 @@ class Board {
         return squares
     }
 
+    /**
+     * Get string representation of the board
+     */
     getBoardString = () => {
         const newBoard = []
         for (let row = 0; row < 8; row++) {
@@ -440,6 +469,9 @@ class Board {
         return newBoard
     }
 
+    /**
+     * get string representation of the board, more condensed than getBoardString, for threefold repetition
+     */
     getFullString = () => {
         let newBoard = ""
         for (let row = 0; row < 8; row++) {

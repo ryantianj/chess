@@ -5,7 +5,7 @@ import Worker from "./ai/worker.worker";
 import Move from "./logic/Move";
 
 let myWorker = new Worker()
-
+// Chess context used for managing the chess game and linking game logic to the frontend
 const ChessContext = React.createContext({
     game: null,
     highlightCell: [],

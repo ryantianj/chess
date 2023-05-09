@@ -1,3 +1,6 @@
+/**
+ * This class represents a chess piece
+ */
 class Piece {
     static WHITE = -1
     static BLACK = 1

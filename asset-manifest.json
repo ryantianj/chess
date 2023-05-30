@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/chess/static/css/main.23b1878e.css",
-    "main.js": "/chess/static/js/main.d4126f39.js",
+    "main.css": "/chess/static/css/main.e9a414c8.css",
+    "main.js": "/chess/static/js/main.8864fe8f.js",
     "static/js/787.497f1025.chunk.js": "/chess/static/js/787.497f1025.chunk.js",
-    "static/js/worker.worker.7f674e4e.worker.js": "/chess/static/js/worker.worker.7f674e4e.worker.js",
+    "static/js/worker.worker.44860ca9.worker.js": "/chess/static/js/worker.worker.44860ca9.worker.js",
     "index.html": "/chess/index.html",
-    "main.23b1878e.css.map": "/chess/static/css/main.23b1878e.css.map",
-    "main.d4126f39.js.map": "/chess/static/js/main.d4126f39.js.map",
+    "main.e9a414c8.css.map": "/chess/static/css/main.e9a414c8.css.map",
+    "main.8864fe8f.js.map": "/chess/static/js/main.8864fe8f.js.map",
     "787.497f1025.chunk.js.map": "/chess/static/js/787.497f1025.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.23b1878e.css",
-    "static/js/main.d4126f39.js"
+    "static/css/main.e9a414c8.css",
+    "static/js/main.8864fe8f.js"
   ]
 }
